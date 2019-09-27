@@ -1,0 +1,17 @@
+LET
+  LET
+    INT  123
+  LET
+    LET
+      LET
+        INT  456
+        NEG
+          Ti23
+    LET
+      LET
+        INT  789
+        LET
+          INT  0
+          ADD
+            Ti25
+            Ti26

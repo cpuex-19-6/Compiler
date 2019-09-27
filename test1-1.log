@@ -1,0 +1,24 @@
+LETREC
+  VAR  fib
+  VAR  n
+  IF
+    LE
+      VAR  n
+      INT  1
+    VAR  n
+    ADD
+      APP
+        VAR  fib
+        SUB
+          VAR  n
+          INT  1
+      APP
+        VAR  fib
+        SUB
+          VAR  n
+          INT  2
+  APP
+    VAR  print_int
+    APP
+      VAR  fib
+      INT  30

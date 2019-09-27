@@ -1,0 +1,35 @@
+LETREC
+  FUN  INT  INT  fib
+  LET
+    INT  1
+    IFLE
+      n
+      Ti27
+      VAR
+        n
+      LET
+        LET
+          LET
+            INT  1
+            SUB
+              n
+              Ti28
+          APP
+            fib
+        LET
+          LET
+            LET
+              INT  2
+              SUB
+                n
+                Ti31
+            APP
+              fib
+          ADD
+            Ti30
+            Ti33
+  LET
+    LET
+      INT  30
+      APP
+        fib

@@ -1,0 +1,14 @@
+LET
+  APP
+    VAR  print_int
+    INT  123
+  LET
+    APP
+      VAR  print_int
+      NEG
+        INT  456
+    APP
+      VAR  print_int
+      ADD
+        INT  789
+        INT  0
