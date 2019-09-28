@@ -1,35 +1,49 @@
 LETREC
   FUN  INT  INT  fib
   LET
+    INT  Ti27
     INT  1
     IFLE
       n
       Ti27
-      VAR
-        n
+      VAR  n
       LET
+        INT  Ti30
         LET
+          INT  Ti29
           LET
+            INT  Ti28
             INT  1
             SUB
               n
               Ti28
           APP
             fib
+            Ti29
         LET
+          INT  Ti33
           LET
+            INT  Ti32
             LET
+              INT  Ti31
               INT  2
               SUB
                 n
                 Ti31
             APP
               fib
+              Ti32
           ADD
             Ti30
             Ti33
   LET
+    INT  Ti26
     LET
+      INT  Ti25
       INT  30
       APP
         fib
+        Ti25
+    PUT
+      print_int
+      Ti26

@@ -1,17 +1,33 @@
 LET
+  UNIT  Tu21
   LET
+    INT  Ti22
     INT  123
+    PUT
+      print_int
+      Ti22
   LET
+    UNIT  Tu20
     LET
+      INT  Ti24
       LET
+        INT  Ti23
         INT  456
-        NEG
-          Ti23
+        NEG  Ti23
+      PUT
+        print_int
+        Ti24
     LET
+      INT  Ti27
       LET
+        INT  Ti25
         INT  789
         LET
+          INT  Ti26
           INT  0
           ADD
             Ti25
             Ti26
+      PUT
+        print_int
+        Ti27
