@@ -74,17 +74,17 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
       Printf.fprintf oc "%s" s
   | NonTail(x), Mr(y) when x = y -> ()
   | NonTail(x), Mr(y) -> Printf.fprintf oc "\taddi\t%s, %s, 0\n" (reg x) (reg y)
-  | NonTail(x), Neg(y) -> Printf.fprintf oc "\tsub\t%s, x0, %s\n" (reg x) (reg y)
+  | NonTail(x), Neg(y) -> Printf.fprintf oc "\tsub\t%s, r0, %s\n" (reg x) (reg y)
   | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc "\tadd\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg x) (reg y) z
   | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "\tsub\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "\tsubi\t%s, %s, %d\n" (reg x) (reg y) z
+  | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "\taddi\t%s, %s, -%d\n" (reg x) (reg y) z
   | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "\tslw\t%s, %s, %s\n" (reg x) (reg y) (reg z) (* TODO: RISC-V *)
   | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "\tslwi\t%s, %s, %d\n" (reg x) (reg y) z (* TODO: RISC-V *)
   | NonTail(x), Lwz(y, V(z)) -> Printf.fprintf oc "\tlwzx\t%s, %s, %s\n" (reg x) (reg y) (reg z) (* TODO: RISC-V *)
   | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc "\tlw\t%s, %d(%s)\n" (reg x) z (reg y)
   | NonTail(_), Stw(x, y, V(z)) -> Printf.fprintf oc "\tstwx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(_), Stw(x, y, C(z)) -> Printf.fprintf oc "\tstw\t%s, %d(%s)\n" (reg x) z (reg y)
+  | NonTail(_), Stw(x, y, C(z)) -> Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg x) z (reg y)
   | NonTail(x), FMr(y) when x = y -> ()
   | NonTail(x), FMr(y) -> Printf.fprintf oc "\tfmr\t%s, %s\n" (reg x) (reg y)
   | NonTail(x), FNeg(y) -> Printf.fprintf oc "\tfneg\t%s, %s\n" (reg x) (reg y)
@@ -100,7 +100,7 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
   (* 退避の仮想命令の実装 (caml2html: emit_save) *)
   | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
       save y;
-      Printf.fprintf oc "\tstw\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
+      Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
   | NonTail(_), Save(x, y) when List.mem x allfregs && not (S.mem y !stackset) ->
       savef y;
       Printf.fprintf oc "\tstfd\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
@@ -187,12 +187,12 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
       Printf.fprintf oc "\tmflr\t%s\n" (reg reg_tmp);
       g'_args oc [(x, reg_cl)] ys zs;
       let ss = stacksize () in
-      Printf.fprintf oc "\tstw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
+      Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
       Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;
       Printf.fprintf oc "\tlw\t%s, 0(%s)\n" (reg reg_tmp) (reg reg_cl);
       Printf.fprintf oc "\tmtctr\t%s\n" (reg reg_tmp);
       Printf.fprintf oc "\tbctrl\n";
-      Printf.fprintf oc "\tsubi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;
+      Printf.fprintf oc "\taddi\t%s, %s, -%d\n" (reg reg_sp) (reg reg_sp) ss;
       Printf.fprintf oc "\tlw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
       if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "\taddi\t%s, %s, 0\n" (reg a) (reg regs.(0))
@@ -203,10 +203,10 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
       Printf.fprintf oc "\tmflr\t%s\n" (reg reg_tmp);
       g'_args oc [] ys zs;
       let ss = stacksize () in
-      Printf.fprintf oc "\tstw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
+      Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
       Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;
       Printf.fprintf oc "\tbl\t%s\n" x;
-      Printf.fprintf oc "\tsubi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;
+      Printf.fprintf oc "\taddi\t%s, %s, -%d\n" (reg reg_sp) (reg reg_sp) ss;
       Printf.fprintf oc "\tlw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
       if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "\taddi\t%s, %s, 0\n" (reg a) (reg regs.(0))
@@ -277,7 +277,7 @@ let f oc (Prog(data, fundefs, e)) =
   Printf.fprintf oc "_min_caml_start: # main entry point\n";
   Printf.fprintf oc "\tmflr\tr0\n";
   Printf.fprintf oc "\tstmw\tr30, -8(r1)\n";
-  Printf.fprintf oc "\tstw\tr0, 8(r1)\n";
+  Printf.fprintf oc "\tsw\tr0, 8(r1)\n";
   Printf.fprintf oc "\tstwu\tr1, -96(r1)\n";
   Printf.fprintf oc "#\tmain program starts\n";
   stackset := S.empty;
