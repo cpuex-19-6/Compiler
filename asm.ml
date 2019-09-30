@@ -59,6 +59,12 @@ let reg_hp = "%r3" (* heap pointer (caml2html: sparcasm_reghp) *)
 let reg_tmp = "%r31" (* [XX] ad hoc *)
 let is_reg x = (x.[0] = '%')
 
+(* レジスタの使い方 *)
+(* 0番: 常に0のレジスタ *)
+(* 1番: リンクレジスタ *)
+(* 2番: スタックポインタ *)
+(* 3番: ヒープポインタ *)
+
 (* super-tenuki *)
 let rec remove_and_uniq xs = function
   | [] -> []
