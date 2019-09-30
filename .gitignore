@@ -6,3 +6,6 @@
 
 min-caml
 min-caml.top
+
+*.s
+*.o
