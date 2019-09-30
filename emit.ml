@@ -35,6 +35,10 @@ let load_label r label =
     "\tlis\t%s, ha16(%s)\n\taddi\t%s, %s, lo16(%s)\n"
     r' label r' r' label
 
+(* 行数をカウントできるようにする *)
+let pc = ref 0
+let pcincr () = let n = !pc in pc := n + 1; n
+
 (* 関数呼び出しのために引数を並べ替える(register shuffling) (caml2html: emit_shuffle) *)
 let rec shuffle sw xys =
   (* remove identical moves *)
@@ -74,7 +78,7 @@ and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
       Printf.fprintf oc "%s" s
   | NonTail(x), Mr(y) when x = y -> ()
   | NonTail(x), Mr(y) -> Printf.fprintf oc "\taddi\t%s, %s, 0\n" (reg x) (reg y)
-  | NonTail(x), Neg(y) -> Printf.fprintf oc "\tsub\t%s, r0, %s\n" (reg x) (reg y)
+  | NonTail(x), Neg(y) -> Printf.fprintf oc "\tsub\t%s, x0, %s\n" (reg x) (reg y)
   | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc "\tadd\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg x) (reg y) z
   | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "\tsub\t%s, %s, %s\n" (reg x) (reg y) (reg z)
@@ -218,7 +222,7 @@ and g'_tail_if oc e1 e2 b bn =
   Printf.fprintf oc "\t%s\tcr7, %s\n" bn b_else;
   let stackset_back = !stackset in
   g oc (Tail, e1);
-  Printf.fprintf oc "%s:\n" b_else;
+  Printf.fprintf oc "# %s:\n" b_else;
   stackset := stackset_back;
   g oc (Tail, e2)
 and g'_non_tail_if oc dest e1 e2 b bn =
@@ -229,10 +233,10 @@ and g'_non_tail_if oc dest e1 e2 b bn =
   g oc (dest, e1);
   let stackset1 = !stackset in
   Printf.fprintf oc "\tb\t%s\n" b_cont;
-  Printf.fprintf oc "%s:\n" b_else;
+  Printf.fprintf oc "# %s:\n" b_else;
   stackset := stackset_back;
   g oc (dest, e2);
-  Printf.fprintf oc "%s:\n" b_cont;
+  Printf.fprintf oc "# %s:\n" b_cont;
   let stackset2 = !stackset in
   stackset := S.inter stackset1 stackset2
 and g'_args oc x_reg_cl ys zs =
@@ -254,7 +258,7 @@ and g'_args oc x_reg_cl ys zs =
     (shuffle reg_fsw zfrs)
 
 let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
-  Printf.fprintf oc "%s:\n" x;
+  Printf.fprintf oc "# %s:\n" x;
   stackset := S.empty;
   stackmap := [];
   g oc (Tail, e)
@@ -266,27 +270,15 @@ let f oc (Prog(data, fundefs, e)) =
      List.iter
        (fun (Id.L(x), d) ->
          Printf.fprintf oc "\t.align 3\n";
-         Printf.fprintf oc "%s:\t # %f\n" x d;
+         Printf.fprintf oc "# %s:\t %f\n" x d;
          Printf.fprintf oc "\t.long\t%ld\n" (gethi d);
          Printf.fprintf oc "\t.long\t%ld\n" (getlo d))
        data);
-  Printf.fprintf oc "\t.text\n";
-  Printf.fprintf oc "\t.globl _min_caml_start\n";
-  Printf.fprintf oc "\t.align 2\n";
   List.iter (fun fundef -> h oc fundef) fundefs;
-  Printf.fprintf oc "_min_caml_start: # main entry point\n";
-  Printf.fprintf oc "\tmflr\tr0\n";
-  Printf.fprintf oc "\tstmw\tr30, -8(r1)\n";
-  Printf.fprintf oc "\tsw\tr0, 8(r1)\n";
-  Printf.fprintf oc "\tstwu\tr1, -96(r1)\n";
-  Printf.fprintf oc "#\tmain program starts\n";
+  Printf.fprintf oc "# main program starts\n";
   stackset := S.empty;
   stackmap := [];
   g oc (NonTail("_R_0"), e);
-  Printf.fprintf oc "#\tmain program ends\n";
+  Printf.fprintf oc "# main program ends\n";
   (* Printf.fprintf oc "\tmr\tr3, %s\n" regs.(0); *)
-  Printf.fprintf oc "\tlw\tr1, 0(r1)\n";
-  Printf.fprintf oc "\tlw\tr0, 8(r1)\n";
-  Printf.fprintf oc "\tmtlr\tr0\n";
-  Printf.fprintf oc "\tlmw\tr30, -8(r1)\n";
   Printf.fprintf oc "\tblr\n"
