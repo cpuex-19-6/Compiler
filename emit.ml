@@ -35,6 +35,13 @@ let load_label r label =
     "\tlis\t%s, ha16(%s)\n\taddi\t%s, %s, lo16(%s)\n"
     r' label r' r' label
 
+
+(* 上位bit（下位12bitより上側の） *)
+let upper n = n asr 12 + if n land (1 lsl 11) = 0 then 0 else 1
+(* 下位12bit *)
+let lower n = (n lsl 51) asr 51
+
+
 (* 行数をカウントできるようにする *)
 let pc = ref 0
 let pcincr () = let n = !pc in pc := n + 1; n
@@ -63,14 +70,17 @@ let rec g oc = function (* 命令列のアセンブリ生成 (caml2html: emit_g) *)
 and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
   (* 末尾でなかったら計算結果をdestにセット (caml2html: emit_nontail) *)
   | NonTail(_), Nop -> ()
-  | NonTail(x), Li(i) when -32768 <= i && i < 32768 -> Printf.fprintf oc "\tli\t%s, %d\n" (reg x) i
-  | NonTail(x), Li(i) ->
-      let n = i lsr 16 in
-      let m = i lxor (n lsl 16) in
-      let r = reg x in
-      Printf.fprintf oc "\tlis\t%s, %d\n" r n;
-      Printf.fprintf oc "\tori\t%s, %s, %d\n" r r m
+  | NonTail(x), Li(n) ->
+      let u = upper n in
+      let l = lower n in
+      if u = 0 then
+        Printf.fprintf oc "\taddi\t%s, x0, %d\n" (reg x) l
+      else
+        (Printf.fprintf oc "\tlui\t%s, %d\n" (reg x) u;
+        if l != 0 then
+          Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg x) (reg x) l)
   | NonTail(x), FLi(Id.L(l)) ->
+      (* TODO: Li と同様に書き換え *)
       let s = load_label (reg reg_tmp) l in
       Printf.fprintf oc "%s\tlfd\t%s, 0(%s)\n" s (reg x) (reg reg_tmp)
   | NonTail(x), SetL(Id.L(y)) ->
