@@ -191,7 +191,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       g'_args oc [] ys zs;
       Printf.fprintf oc "%d\tb\t%s\n" (pcincr()) x
   | NonTail(a), CallCls(x, ys, zs) ->
-      Printf.fprintf oc "%d\tmflr\t%s\n" (pcincr()) (reg reg_tmp);
+      Printf.fprintf oc "%d\taddi\t%s, x1, 0\n" (pcincr()) (reg reg_tmp);
       g'_args oc [(x, reg_cl)] ys zs;
       let ss = stacksize () in
       Printf.fprintf oc "%d\tsw\t%s, %d(%s)\n" (pcincr()) (reg reg_tmp) (ss - 4) (reg reg_sp);
@@ -205,9 +205,9 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\n" (pcincr()) (reg a) (reg regs.(0))
       else if List.mem a allfregs && a <> fregs.(0) then
         Printf.fprintf oc "%d\tfmr\t%s, %s\n" (pcincr()) (reg a) (reg fregs.(0));
-      Printf.fprintf oc "%d\tmtlr\t%s\n" (pcincr()) (reg reg_tmp)
+      Printf.fprintf oc "%d\taddi\tx1, %s, 0\n" (pcincr()) (reg reg_tmp)
   | (NonTail(a), CallDir(Id.L(x), ys, zs)) ->
-      Printf.fprintf oc "%d\tmflr\t%s\n" (pcincr()) (reg reg_tmp);
+      Printf.fprintf oc "%d\taddi\t%s, x1, 0\n" (pcincr()) (reg reg_tmp);
       g'_args oc [] ys zs;
       let ss = stacksize () in
       Printf.fprintf oc "%d\tsw\t%s, %d(%s)\n" (pcincr()) (reg reg_tmp) (ss - 4) (reg reg_sp);
@@ -219,7 +219,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\n" (pcincr()) (reg a) (reg regs.(0))
       else if List.mem a allfregs && a <> fregs.(0) then
         Printf.fprintf oc "%d\tfmr\t%s, %s\n" (pcincr()) (reg a) (reg fregs.(0));
-      Printf.fprintf oc "%d\tmtlr\t%s\n" (pcincr()) (reg reg_tmp)
+      Printf.fprintf oc "%d\taddi\tx1, %s, 0\n" (pcincr()) (reg reg_tmp)
 and g'_tail_if oc e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
   Printf.fprintf oc "%d\t%s \t%s, %s, %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) -(!pc));
