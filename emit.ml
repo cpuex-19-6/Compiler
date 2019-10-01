@@ -150,10 +150,10 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       Printf.fprintf oc "%d\taddi\t%s, x0, %d\n" (pcincr()) (reg reg_tmp) y;
       g'_tail_if oc e1 e2 "beq" "bne" x reg_tmp
   | Tail, IfLE(x, V(y), e1, e2) ->
-      g'_tail_if oc e1 e2 "ble" "bgt" x y 
+      g'_tail_if oc e1 e2 "bge" "blt" y x
   | Tail, IfLE(x, C(y), e1, e2) ->
       Printf.fprintf oc "%d\taddi\t%s, x0, %d\n" (pcincr()) (reg reg_tmp) y;
-      g'_tail_if oc e1 e2 "ble" "bgt" x reg_tmp
+      g'_tail_if oc e1 e2 "bge" "blt" reg_tmp x
   | Tail, IfGE(x, V(y), e1, e2) ->
       g'_tail_if oc e1 e2 "bge" "blt" x y
   | Tail, IfGE(x, C(y), e1, e2) ->
@@ -162,17 +162,17 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
   | Tail, IfFEq(x, y, e1, e2) ->
       g'_tail_if oc e1 e2 "beq" "bne" x y
   | Tail, IfFLE(x, y, e1, e2) ->
-      g'_tail_if oc e1 e2 "ble" "bgt" x y
+      g'_tail_if oc e1 e2 "bge" "blt" y x
   | NonTail(z), IfEq(x, V(y), e1, e2) ->
       g'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
   | NonTail(z), IfEq(x, C(y), e1, e2) ->
       Printf.fprintf oc "%d\taddi\t%s, x0, %d\n" (pcincr()) (reg reg_tmp) y;
       g'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x reg_tmp
   | NonTail(z), IfLE(x, V(y), e1, e2) ->
-      g'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt" x y
+      g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
   | NonTail(z), IfLE(x, C(y), e1, e2) ->
       Printf.fprintf oc "%d\taddi\t%s, x0, %d\n" (pcincr()) (reg reg_tmp) y;
-      g'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt" x reg_tmp
+      g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" reg_tmp x
   | NonTail(z), IfGE(x, V(y), e1, e2) ->
       g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" x y
   | NonTail(z), IfGE(x, C(y), e1, e2) ->
@@ -181,7 +181,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
   | NonTail(z), IfFEq(x, y, e1, e2) ->
       g'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
   | NonTail(z), IfFLE(x, y, e1, e2) ->
-      g'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt" x y
+      g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
   (* �ؿ��ƤӽФ��β���̿��μ��� (caml2html: emit_call) *)
   | Tail, CallCls(x, ys, zs) -> (* �����ƤӽФ� (caml2html: emit_tailcall) *)
       g'_args oc [(x, reg_cl)] ys zs;
@@ -222,7 +222,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       Printf.fprintf oc "%d\tmtlr\t%s\n" (pcincr()) (reg reg_tmp)
 and g'_tail_if oc e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
-  Printf.fprintf oc "%d\t%s\t%s, %s, %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) -(!pc));
+  Printf.fprintf oc "%d\t%s \t%s, %s, %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) -(!pc));
   let stackset_back = !stackset in
   g oc (Tail, e1);
   Printf.fprintf oc "# %s:\n" b_else;
@@ -469,4 +469,4 @@ let f oc (Prog(data, fundefs, e)) =
   g oc (NonTail("_R_0"), e);
   Printf.fprintf oc "# main program ends\n";
   (* Printf.fprintf oc "\tmr\tr3, %s\n" regs.(0); *)
-  Printf.fprintf oc "%d\tblr\n" (pcincr())
+  Printf.fprintf oc "%d\tjalr\tx0, x1, 0\n" (pcincr())
