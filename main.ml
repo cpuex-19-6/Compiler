@@ -10,9 +10,6 @@ let rec iter n e = (* ��Ŭ�������򤯤꤫���� (caml2htm
 let lexbuf outchan l = (* �Хåե��򥳥�ѥ��뤷�ƥ����ͥ�ؽ��Ϥ��� (caml2html: main_lexbuf) *)
   Id.counter := 0;
   Typing.extenv := M.empty;
-  (*Syntax.print_syntax outchan ((Parser.exp Lexer.token l)) 0*)
-   (* Printf.fprintf outchan "%s" "hoge"*)         
-  (*KNormal.print_normal outchan (Alpha.f(KNormal.f(Typing.f(Parser.exp Lexer.token l))))  *)
   
   Emit.f outchan
     (RegAlloc.f

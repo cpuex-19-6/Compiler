@@ -3,8 +3,24 @@ open Asm
 external gethi : float -> int32 = "gethi"
 external getlo : float -> int32 = "getlo"
 
-let stackset = ref S.empty (* ¤¹¤Ç¤ËSave¤µ¤ì¤¿ÊÑ¿ô¤Î½¸¹ç (caml2html: emit_stackset) *)
-let stackmap = ref [] (* Save¤µ¤ì¤¿ÊÑ¿ô¤Î¡¢¥¹¥¿¥Ã¥¯¤Ë¤ª¤±¤ë°ÌÃÖ (caml2html: emit_stackmap) *)
+let add_list = Hashtbl.create 0
+
+let rec int_to_binary_sub num len = 
+   if num > 0 then (string_of_int(num mod 2))^(int_to_binary_sub (num/2) (len-1))
+   else if len > 0 then "0"^(int_to_binary_sub (num/2) (len-1))
+   else ""
+
+let rec int_to_binary num len = 
+if num < 0 then int_to_binary_sub ((int_of_float (2. ** (float_of_int len))) + num) len
+else int_to_binary_sub num len
+
+let rec reg_to_binary r = 
+let first = (try String.index r 'r' with _ -> String.index r 'f') in
+let length = (String.length r) - first - 1 in
+int_to_binary (int_of_string (String.sub r (first+1) length)) 5
+
+let stackset = ref S.empty (* ï¿½ï¿½ï¿½Ç¤ï¿½Saveï¿½ï¿½ï¿½ì¤¿ï¿½Ñ¿ï¿½ï¿½Î½ï¿½ï¿½ï¿½ (caml2html: emit_stackset) *)
+let stackmap = ref [] (* Saveï¿½ï¿½ï¿½ì¤¿ï¿½Ñ¿ï¿½ï¿½Î¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_stackmap) *)
 let save x =
   stackset := S.add x !stackset;
   if not (List.mem x !stackmap) then
@@ -35,7 +51,7 @@ let load_label r label =
     "\tlis\t%s, ha16(%s)\n\taddi\t%s, %s, lo16(%s)\n"
     r' label r' r' label
 
-(* ´Ø¿ô¸Æ¤Ó½Ð¤·¤Î¤¿¤á¤Ë°ú¿ô¤òÊÂ¤ÙÂØ¤¨¤ë(register shuffling) (caml2html: emit_shuffle) *)
+(* ï¿½Ø¿ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ï¿½Î¤ï¿½ï¿½ï¿½Ë°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¤ï¿½ï¿½Ø¤ï¿½ï¿½ï¿½(register shuffling) (caml2html: emit_shuffle) *)
 let rec shuffle sw xys =
   (* remove identical moves *)
   let _, xys = List.partition (fun (x, y) -> x = y) xys in
@@ -50,14 +66,17 @@ let rec shuffle sw xys =
                                          xys)
   | xys, acyc -> acyc @ shuffle sw xys
 
-type dest = Tail | NonTail of Id.t (* ËöÈø¤«¤É¤¦¤«¤òÉ½¤¹¥Ç¡¼¥¿·¿ (caml2html: emit_dest) *)
-let rec g oc = function (* Ì¿ÎáÎó¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_g) *)
-  | dest, Ans(exp) -> g' oc (dest, exp)
+type dest = Tail | NonTail of Id.t (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¤ï¿½ï¿½ï¿½ï¿½ï¿½É½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_dest) *)
+
+let pc = ref (-2)
+
+let rec g oc = function (* Ì¿ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_g) *)
+  | dest, Ans(exp) -> pc := (!pc) + 2; Printf.fprintf oc "%d " !pc;g' oc (dest, exp)
   | dest, Let((x, t), exp, e) ->
-      g' oc (NonTail(x), exp);
+      pc := (!pc) + 2; Printf.fprintf oc "%d  " !pc;g' oc (NonTail(x), exp);
       g oc (dest, e)
-and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
-  (* ËöÈø¤Ç¤Ê¤«¤Ã¤¿¤é·×»»·ë²Ì¤òdest¤Ë¥»¥Ã¥È (caml2html: emit_nontail) *)
+and g' oc = function (* ï¿½ï¿½Ì¿ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_gprime) *)
+  (* ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½ï¿½Ã¤ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ì¤ï¿½destï¿½Ë¥ï¿½ï¿½Ã¥ï¿½ (caml2html: emit_nontail) *)
   | NonTail(_), Nop -> ()
   | NonTail(x), Li(i) when -32768 <= i && i < 32768 -> Printf.fprintf oc "\tli\t%s, %d\n" (reg x) i
   | NonTail(x), Li(i) ->
@@ -72,19 +91,19 @@ and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
   | NonTail(x), SetL(Id.L(y)) ->
       let s = load_label x y in
       Printf.fprintf oc "%s" s
-  | NonTail(x), Mr(y) when x = y -> ()
-  | NonTail(x), Mr(y) -> Printf.fprintf oc "\tmr\t%s, %s\n" (reg x) (reg y)
-  | NonTail(x), Neg(y) -> Printf.fprintf oc "\tneg\t%s, %s\n" (reg x) (reg y)
-  | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc "\tadd\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg x) (reg y) z
-  | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "\tsub\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "\tsubi\t%s, %s, %d\n" (reg x) (reg y) z
+  | NonTail(x), Mr(y) when x = y -> Printf.fprintf oc "nop ";()
+  | NonTail(x), Mr(y) -> Printf.fprintf oc (*"\tmr\t%s, %s\n" (reg x) (reg y)*)"%s%s000%s0010011\n" (int_to_binary 0 12) (reg_to_binary y) (reg_to_binary x) 
+  | NonTail(x), Neg(y) -> Printf.fprintf oc (*"\tneg\t%s, %s\n" (reg x) (reg y)*)"0100000%s00000000%s0110011\n" (reg_to_binary y) (reg_to_binary x) 
+  | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc (*"\tadd\t%s, %s, %s\n" (reg x) (reg y) (reg z)*)"0000000%s%s000%s0110011\n" (reg_to_binary z) (reg_to_binary y) (reg_to_binary x)
+  | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc (*"\taddi\t%s, %s, %d\n" (reg x) (reg y) z*)"%s%s000%s0010011\n" (int_to_binary z 12) (reg_to_binary y) (reg_to_binary x) 
+  | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc (*"\tsub\t%s, %s, %s\n" (reg x) (reg y) (reg z)*)"0100000%s%s000%s0110011\n" (reg_to_binary z) (reg_to_binary y) (reg_to_binary x)
+  | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc (*"\tsubi\t%s, %s, %d\n" (reg x) (reg y) z*)"%s%s000%s0010011\n" (int_to_binary (-z) 12) (reg_to_binary y) (reg_to_binary x) 
   | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "\tslw\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "\tslwi\t%s, %s, %d\n" (reg x) (reg y) z
   | NonTail(x), Lwz(y, V(z)) -> Printf.fprintf oc "\tlwzx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc "\tlwz\t%s, %d(%s)\n" (reg x) z (reg y)
+  | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc (*"\tlwz\t%s, %d(%s)\n" (reg x) z (reg y)*)"%s%s010%s0000011\n"  (int_to_binary z 12)  (reg_to_binary y) (reg_to_binary x) 
   | NonTail(_), Stw(x, y, V(z)) -> Printf.fprintf oc "\tstwx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(_), Stw(x, y, C(z)) -> Printf.fprintf oc "\tstw\t%s, %d(%s)\n" (reg x) z (reg y)
+  | NonTail(_), Stw(x, y, C(z)) -> Printf.fprintf oc (*"\tstw\t%s, %d(%s)\n" (reg x) z (reg y)*)"%s%s%s010%s0100011\n" (String.sub (int_to_binary z 12) 0 6) (reg_to_binary y) (reg_to_binary x) (String.sub (int_to_binary z 12) 6 6)
   | NonTail(x), FMr(y) when x = y -> ()
   | NonTail(x), FMr(y) -> Printf.fprintf oc "\tfmr\t%s, %s\n" (reg x) (reg y)
   | NonTail(x), FNeg(y) -> Printf.fprintf oc "\tfneg\t%s, %s\n" (reg x) (reg y)
@@ -97,30 +116,30 @@ and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
   | NonTail(_), Stfd(x, y, V(z)) -> Printf.fprintf oc "\tstfdx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | NonTail(_), Stfd(x, y, C(z)) -> Printf.fprintf oc "\tstfd\t%s, %d(%s)\n" (reg x) z (reg y)
   | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
-  (* ÂàÈò¤Î²¾ÁÛÌ¿Îá¤Î¼ÂÁõ (caml2html: emit_save) *)
+  (* ï¿½ï¿½ï¿½ï¿½Î²ï¿½ï¿½ï¿½Ì¿ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ (caml2html: emit_save) *)
   | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
       save y;
-      Printf.fprintf oc "\tstw\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
+      Printf.fprintf oc (*"\tstw\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)*)"%s%s%s010%s0100011\n" (String.sub (int_to_binary (offset y) 12) 0 6) (reg_to_binary reg_sp) (reg_to_binary x) (String.sub (int_to_binary(offset y) 12) 6 6)
   | NonTail(_), Save(x, y) when List.mem x allfregs && not (S.mem y !stackset) ->
       savef y;
       Printf.fprintf oc "\tstfd\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
   | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
-  (* Éüµ¢¤Î²¾ÁÛÌ¿Îá¤Î¼ÂÁõ (caml2html: emit_restore) *)
+  (* ï¿½ï¿½ï¿½ï¿½ï¿½Î²ï¿½ï¿½ï¿½Ì¿ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ (caml2html: emit_restore) *)
   | NonTail(x), Restore(y) when List.mem x allregs ->
       Printf.fprintf oc "\tlwz\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
   | NonTail(x), Restore(y) ->
       assert (List.mem x allfregs);
       Printf.fprintf oc "\tlfd\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
-  (* ËöÈø¤À¤Ã¤¿¤é·×»»·ë²Ì¤òÂè°ì¥ì¥¸¥¹¥¿¤Ë¥»¥Ã¥È¤·¤Æ¥ê¥¿¡¼¥ó (caml2html: emit_tailret) *)
+  (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¤ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ì¤ï¿½ï¿½ï¿½ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½Ë¥ï¿½ï¿½Ã¥È¤ï¿½ï¿½Æ¥ê¥¿ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_tailret) *)
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
       g' oc (NonTail(Id.gentmp Type.Unit), exp);
       Printf.fprintf oc "\tblr\n";
   | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Slw _ | Lwz _ as exp) ->
       g' oc (NonTail(regs.(0)), exp);
-      Printf.fprintf oc "\tblr\n";
+      pc := !pc + 2;Printf.fprintf oc "%d abc" !pc;Printf.fprintf oc "\tblr\n";
   | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ as exp) ->
       g' oc (NonTail(fregs.(0)), exp);
-      Printf.fprintf oc "\tblr\n";
+      pc := !pc + 2;Printf.fprintf oc "%d def" !pc;Printf.fprintf oc "\tblr\n";
   | Tail, (Restore(x) as exp) ->
       (match locate x with
       | [i] -> g' oc (NonTail(regs.(0)), exp)
@@ -132,19 +151,19 @@ and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
       g'_tail_if oc e1 e2 "beq" "bne"
   | Tail, IfEq(x, C(y), e1, e2) ->
       Printf.fprintf oc "\tcmpwi\tcr7, %s, %d\n" (reg x) y;
-      g'_tail_if oc e1 e2 "beq" "bne"
+      pc := (!pc) + 2; Printf.fprintf oc "%d " !pc;g'_tail_if oc e1 e2 "beq" "bne"
   | Tail, IfLE(x, V(y), e1, e2) ->
       Printf.fprintf oc "\tcmpw\tcr7, %s, %s\n" (reg x) (reg y);
       g'_tail_if oc e1 e2 "ble" "bgt"
   | Tail, IfLE(x, C(y), e1, e2) ->
       Printf.fprintf oc "\tcmpwi\tcr7, %s, %d\n" (reg x) y;
-      g'_tail_if oc e1 e2 "ble" "bgt"
+      pc := (!pc) + 2; Printf.fprintf oc "%d " !pc;g'_tail_if oc e1 e2 "ble" "bgt"
   | Tail, IfGE(x, V(y), e1, e2) ->
       Printf.fprintf oc "\tcmpw\tcr7, %s, %s\n" (reg x) (reg y);
       g'_tail_if oc e1 e2 "bge" "blt"
   | Tail, IfGE(x, C(y), e1, e2) ->
       Printf.fprintf oc "\tcmpwi\tcr7, %s, %d\n" (reg x) y;
-      g'_tail_if oc e1 e2 "bge" "blt"
+      pc := (!pc) + 2; Printf.fprintf oc "%d " !pc;g'_tail_if oc e1 e2 "bge" "blt"
   | Tail, IfFEq(x, y, e1, e2) ->
       Printf.fprintf oc "\tfcmpu\tcr7, %s, %s\n" (reg x) (reg y);
       g'_tail_if oc e1 e2 "beq" "bne"
@@ -162,57 +181,57 @@ and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
       g'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt"
   | NonTail(z), IfLE(x, C(y), e1, e2) ->
       Printf.fprintf oc "\tcmpwi\tcr7, %s, %d\n" (reg x) y;
-      g'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt"
+      pc := (!pc) + 2; Printf.fprintf oc "%d " !pc;g'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt"
   | NonTail(z), IfGE(x, V(y), e1, e2) ->
       Printf.fprintf oc "\tcmpw\tcr7, %s, %s\n" (reg x) (reg y);
       g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt"
   | NonTail(z), IfGE(x, C(y), e1, e2) ->
       Printf.fprintf oc "\tcmpwi\tcr7, %s, %d\n" (reg x) y;
-      g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt"
+      pc := (!pc) + 2; Printf.fprintf oc "%d " !pc;g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt"
   | NonTail(z), IfFEq(x, y, e1, e2) ->
       Printf.fprintf oc "\tfcmpu\tcr7, %s, %s\n" (reg x) (reg y);
       g'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne"
   | NonTail(z), IfFLE(x, y, e1, e2) ->
       Printf.fprintf oc "\tfcmpu\tcr7, %s, %s\n" (reg x) (reg y);
       g'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt"
-  (* ´Ø¿ô¸Æ¤Ó½Ð¤·¤Î²¾ÁÛÌ¿Îá¤Î¼ÂÁõ (caml2html: emit_call) *)
-  | Tail, CallCls(x, ys, zs) -> (* ËöÈø¸Æ¤Ó½Ð¤· (caml2html: emit_tailcall) *)
+  (* ï¿½Ø¿ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ï¿½Î²ï¿½ï¿½ï¿½Ì¿ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ (caml2html: emit_call) *)
+  | Tail, CallCls(x, ys, zs) -> (* ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ (caml2html: emit_tailcall) *)
       g'_args oc [(x, reg_cl)] ys zs;
       Printf.fprintf oc "\tlwz\t%s, 0(%s)\n" (reg reg_sw) (reg reg_cl);
       Printf.fprintf oc "\tmtctr\t%s\n\tbctr\n" (reg reg_sw);
-  | Tail, CallDir(Id.L(x), ys, zs) -> (* ËöÈø¸Æ¤Ó½Ð¤· *)
+  | Tail, CallDir(Id.L(x), ys, zs) -> (* ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ *)
       g'_args oc [] ys zs;
       Printf.fprintf oc "\tb\t%s\n" x
   | NonTail(a), CallCls(x, ys, zs) ->
       Printf.fprintf oc "\tmflr\t%s\n" (reg reg_tmp);
       g'_args oc [(x, reg_cl)] ys zs;
       let ss = stacksize () in
-      Printf.fprintf oc "\tstw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
-      Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;
-      Printf.fprintf oc "\tlwz\t%s, 0(%s)\n" (reg reg_tmp) (reg reg_cl);
-      Printf.fprintf oc "\tmtctr\t%s\n" (reg reg_tmp);
-      Printf.fprintf oc "\tbctrl\n";
-      Printf.fprintf oc "\tsubi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;
-      Printf.fprintf oc "\tlwz\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\tstw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);*)"%s%s%s010%s0100011\n" (String.sub (int_to_binary (ss-4) 12) 0 6) (reg_to_binary reg_tmp) (reg_to_binary reg_sp) (String.sub (int_to_binary (ss-4) 12) 6 6);
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\taddi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;*)"%s%s000%s0010011\n" (int_to_binary ss 12) (reg_to_binary reg_sp) (reg_to_binary reg_sp);
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\tlwz\t%s, 0(%s)\n" (reg reg_tmp) (reg reg_cl);*)"%s%s010%s0000011\n"  (int_to_binary 0 12)  (reg_to_binary reg_cl) (reg_to_binary reg_tmp) ;
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tmtctr\t%s\n" (reg reg_tmp);
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tbctrl\n";
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tsubi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tlwz\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
       if List.mem a allregs && a <> regs.(0) then
-        Printf.fprintf oc "\tmr\t%s, %s\n" (reg a) (reg regs.(0))
+        (pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\tmr\t%s, %s\n" (reg a) (reg regs.(0)))*)"%s%s000%s0010011\n" (int_to_binary 0 12) (reg_to_binary regs.(0)) (reg_to_binary a))
       else if List.mem a allfregs && a <> fregs.(0) then
-        Printf.fprintf oc "\tfmr\t%s, %s\n" (reg a) (reg fregs.(0));
-      Printf.fprintf oc "\tmtlr\t%s\n" (reg reg_tmp)
+        pc := !pc + 2;Printf.fprintf oc "%d  ghi" !pc;Printf.fprintf oc "\tfmr\t%s, %s\n" (reg a) (reg fregs.(0));
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tmtlr\t%s\n" (reg reg_tmp)
   | (NonTail(a), CallDir(Id.L(x), ys, zs)) ->
       Printf.fprintf oc "\tmflr\t%s\n" (reg reg_tmp);
       g'_args oc [] ys zs;
       let ss = stacksize () in
-      Printf.fprintf oc "\tstw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
-      Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;
-      Printf.fprintf oc "\tbl\t%s\n" x;
-      Printf.fprintf oc "\tsubi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;
-      Printf.fprintf oc "\tlwz\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\tstw\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp)*)"%s%s%s010%s0100011\n" (String.sub (int_to_binary (ss-4) 12) 0 6) (reg_to_binary reg_tmp) (reg_to_binary reg_sp) (String.sub (int_to_binary (ss-4) 12) 6 6);
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\taddi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss*)"%s%s000%s0010011\n" (int_to_binary ss 12) (reg_to_binary reg_sp) (reg_to_binary reg_sp);
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tbl\t%s\n" x;
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\tsubi\t%s, %s, %d\n" (reg reg_sp) (reg reg_sp) ss;*)"%s%s000%s0010011\n" (int_to_binary (-ss) 12) (reg_to_binary reg_sp) (reg_to_binary reg_sp) ;
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\tlwz\t%s, %d(%s)\n" (reg reg_tmp) (ss - 4) (reg reg_sp);*)"%s%s010%s0000011\n"  (int_to_binary (ss-4) 12)  (reg_to_binary reg_sp) (reg_to_binary reg_tmp) ;
       if List.mem a allregs && a <> regs.(0) then
-        Printf.fprintf oc "\tmr\t%s, %s\n" (reg a) (reg regs.(0))
+        (pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\tmr\t%s, %s\n" (reg a) (reg regs.(0)))*)"%s%s000%s0010011\n" (int_to_binary 0 12) (reg_to_binary regs.(0)) (reg_to_binary a))
       else if List.mem a allfregs && a <> fregs.(0) then
-        Printf.fprintf oc "\tfmr\t%s, %s\n" (reg a) (reg fregs.(0));
-      Printf.fprintf oc "\tmtlr\t%s\n" (reg reg_tmp)
+      (pc := !pc + 2;Printf.fprintf oc "%d jkl" !pc;Printf.fprintf oc "\tfmr\t%s, %s\n" (reg a) (reg fregs.(0));
+      pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\tmtlr\t%s\n" (reg reg_tmp)*)"%s%s000%s0010011\n" (int_to_binary 0 12) (reg_to_binary reg_tmp) "00001" )
 and g'_tail_if oc e1 e2 b bn =
   let b_else = Id.genid (b ^ "_else") in
   Printf.fprintf oc "\t%s\tcr7, %s\n" bn b_else;
@@ -242,7 +261,7 @@ and g'_args oc x_reg_cl ys zs =
       (0, x_reg_cl)
       ys in
   List.iter
-    (fun (y, r) -> Printf.fprintf oc "\tmr\t%s, %s\n" (reg r) (reg y))
+    (fun (y, r) -> pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc (*"\tmr\t%s, %s\n" (reg r) (reg y)*)"%s%s000%s0010011\n" (int_to_binary 0 12) (reg_to_binary y) (reg_to_binary r) )
     (shuffle reg_sw yrs);
   let (d, zfrs) =
     List.fold_left
@@ -250,7 +269,7 @@ and g'_args oc x_reg_cl ys zs =
       (0, [])
       zs in
   List.iter
-    (fun (z, fr) -> Printf.fprintf oc "\tfmr\t%s, %s\n" (reg fr) (reg z))
+    (fun (z, fr) -> pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tfmr\t%s, %s\n" (reg fr) (reg z))
     (shuffle reg_fsw zfrs)
 
 let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
@@ -275,18 +294,18 @@ let f oc (Prog(data, fundefs, e)) =
   Printf.fprintf oc "\t.align 2\n";
   List.iter (fun fundef -> h oc fundef) fundefs;
   Printf.fprintf oc "_min_caml_start: # main entry point\n";
-  Printf.fprintf oc "\tmflr\tr0\n";
-  Printf.fprintf oc "\tstmw\tr30, -8(r1)\n";
-  Printf.fprintf oc "\tstw\tr0, 8(r1)\n";
-  Printf.fprintf oc "\tstwu\tr1, -96(r1)\n";
+  pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tmflr\tr0\n";
+  pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tstmw\tr30, -8(r1)\n";
+  pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tstw\tr0, 8(r1)\n";
+  pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tstwu\tr1, -96(r1)\n";
   Printf.fprintf oc "#\tmain program starts\n";
   stackset := S.empty;
   stackmap := [];
   g oc (NonTail("_R_0"), e);
   Printf.fprintf oc "#\tmain program ends\n";
   (* Printf.fprintf oc "\tmr\tr3, %s\n" regs.(0); *)
-  Printf.fprintf oc "\tlwz\tr1, 0(r1)\n";
-  Printf.fprintf oc "\tlwz\tr0, 8(r1)\n";
-  Printf.fprintf oc "\tmtlr\tr0\n";
-  Printf.fprintf oc "\tlmw\tr30, -8(r1)\n";
-  Printf.fprintf oc "\tblr\n"
+  pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tlwz\tr1, 0(r1)\n";
+  pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tlwz\tr0, 8(r1)\n";
+  pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tmtlr\tr0\n";
+  pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tlmw\tr30, -8(r1)\n";
+  pc := !pc + 2;Printf.fprintf oc "%d " !pc;Printf.fprintf oc "\tblr\n"
