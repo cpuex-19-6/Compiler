@@ -78,8 +78,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       else
         (Printf.fprintf oc "%d \tlui\t%s, %d\n" (pcincr()) (reg x) u;
         if l != 0 then
-          Printf.fprintf oc "%d \taddi\t%s, %s, %d\n"(pcincr()) (reg x) (reg x) l;
-        )
+          Printf.fprintf oc "%d \taddi\t%s, %s, %d\n"(pcincr()) (reg x) (reg x) l)
   | NonTail(x), FLi(Id.L(l)) ->
       (* TODO: Li ��Ʊ�ͤ˽񤭴��� *)
       let s = load_label (reg reg_tmp) l in
