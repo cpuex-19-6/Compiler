@@ -74,73 +74,74 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       let u = upper n in
       let l = lower n in
       if u = 0 then
-        Printf.fprintf oc "\taddi\t%s, x0, %d\n" (reg x) l
+        Printf.fprintf oc "%d \taddi\t%s, x0, %d\n" (pcincr()) (reg x) l
       else
-        (Printf.fprintf oc "\tlui\t%s, %d\n" (reg x) u;
+        (Printf.fprintf oc "%d \tlui\t%s, %d\n" (pcincr()) (reg x) u;
         if l != 0 then
-          Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg x) (reg x) l)
+          Printf.fprintf oc "%d \taddi\t%s, %s, %d\n"(pcincr()) (reg x) (reg x) l;
+        )
   | NonTail(x), FLi(Id.L(l)) ->
       (* TODO: Li ��Ʊ�ͤ˽񤭴��� *)
       let s = load_label (reg reg_tmp) l in
-      Printf.fprintf oc "%s\tlfd\t%s, 0(%s)\n" s (reg x) (reg reg_tmp)
+      Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\n"(pcincr()) s (reg x) (reg reg_tmp);
   | NonTail(x), SetL(Id.L(y)) ->
       let s = load_label x y in
       Printf.fprintf oc "%s" s
   | NonTail(x), Mr(y) when x = y -> ()
-  | NonTail(x), Mr(y) -> Printf.fprintf oc "\taddi\t%s, %s, 0\n" (reg x) (reg y)
-  | NonTail(x), Neg(y) -> Printf.fprintf oc "\tsub\t%s, x0, %s\n" (reg x) (reg y)
-  | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc "\tadd\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg x) (reg y) z
-  | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "\tsub\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "\taddi\t%s, %s, -%d\n" (reg x) (reg y) z
-  | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "\tslw\t%s, %s, %s\n" (reg x) (reg y) (reg z) (* TODO: RISC-V *)
-  | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "\tslwi\t%s, %s, %d\n" (reg x) (reg y) z (* TODO: RISC-V *)
-  | NonTail(x), Lwz(y, V(z)) -> Printf.fprintf oc "\tlwzx\t%s, %s, %s\n" (reg x) (reg y) (reg z) (* TODO: RISC-V *)
-  | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc "\tlw\t%s, %d(%s)\n" (reg x) z (reg y)
-  | NonTail(_), Stw(x, y, V(z)) -> Printf.fprintf oc "\tstwx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(_), Stw(x, y, C(z)) -> Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg x) z (reg y)
+  | NonTail(x), Mr(y) -> Printf.fprintf oc "%d \taddi\t%s, %s, 0\n" (pcincr()) (reg x) (reg y)
+  | NonTail(x), Neg(y) -> Printf.fprintf oc "%d \tsub\t%s, x0, %s\n" (pcincr())(reg x) (reg y)
+  | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc "%d \tadd\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "%d \taddi\t%s, %s, %d\n" (pcincr()) (reg x) (reg y) z
+  | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "%d \tsub\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "%d \taddi\t%s, %s, -%d\n" (pcincr()) (reg x) (reg y) z
+  | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "%d \tslw\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)(* TODO: RISC-V *)
+  | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "%d \tslwi\t%s, %s, %d\n" (pcincr()) (reg x) (reg y) z (* TODO: RISC-V *)
+  | NonTail(x), Lwz(y, V(z)) -> Printf.fprintf oc "%d \tlwzx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z) (* TODO: RISC-V *)
+  | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc "%d \tlw\t%s, %d(%s)\n" (pcincr()) (reg x) z (reg y)
+  | NonTail(_), Stw(x, y, V(z)) -> Printf.fprintf oc "%d \tstwx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(_), Stw(x, y, C(z)) -> Printf.fprintf oc "%d \tsw\t%s, %d(%s)\n" (pcincr()) (reg x) z (reg y)
   | NonTail(x), FMr(y) when x = y -> ()
-  | NonTail(x), FMr(y) -> Printf.fprintf oc "\tfmr\t%s, %s\n" (reg x) (reg y)
-  | NonTail(x), FNeg(y) -> Printf.fprintf oc "\tfneg\t%s, %s\n" (reg x) (reg y)
-  | NonTail(x), FAdd(y, z) -> Printf.fprintf oc "\tfadd\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), FSub(y, z) -> Printf.fprintf oc "\tfsub\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), FMul(y, z) -> Printf.fprintf oc "\tfmul\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), FDiv(y, z) -> Printf.fprintf oc "\tfdiv\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), Lfd(y, V(z)) -> Printf.fprintf oc "\tlfdx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(x), Lfd(y, C(z)) -> Printf.fprintf oc "\tlfd\t%s, %d(%s)\n" (reg x) z (reg y)
-  | NonTail(_), Stfd(x, y, V(z)) -> Printf.fprintf oc "\tstfdx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  | NonTail(_), Stfd(x, y, C(z)) -> Printf.fprintf oc "\tstfd\t%s, %d(%s)\n" (reg x) z (reg y)
+  | NonTail(x), FMr(y) -> Printf.fprintf oc "%d \tfmr\t%s, %s\n" (pcincr()) (reg x) (reg y)
+  | NonTail(x), FNeg(y) -> Printf.fprintf oc "%d \tfneg\t%s, %s\n" (pcincr()) (reg x) (reg y)
+  | NonTail(x), FAdd(y, z) -> Printf.fprintf oc "%d \tfadd\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), FSub(y, z) -> Printf.fprintf oc "%d \tfsub\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), FMul(y, z) -> Printf.fprintf oc "%d \tfmul\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), FDiv(y, z) -> Printf.fprintf oc "%d \tfdiv\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), Lfd(y, V(z)) -> Printf.fprintf oc "%d \tlfdx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), Lfd(y, C(z)) -> Printf.fprintf oc "%d \tlfd\t%s, %d(%s)\n" (pcincr())(reg x) z (reg y)
+  | NonTail(_), Stfd(x, y, V(z)) -> Printf.fprintf oc "%d \tstfdx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(_), Stfd(x, y, C(z)) -> Printf.fprintf oc "%d \tstfd\t%s, %d(%s)\n" (pcincr()) (reg x) z (reg y)
   | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
   (* ����β���̿��μ��� (caml2html: emit_save) *)
   | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
       save y;
-      Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
+      Printf.fprintf oc "%d \tsw\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(_), Save(x, y) when List.mem x allfregs && not (S.mem y !stackset) ->
       savef y;
-      Printf.fprintf oc "\tstfd\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
+      Printf.fprintf oc "%d \tstfd\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
   (* �����β���̿��μ��� (caml2html: emit_restore) *)
   | NonTail(x), Restore(y) when List.mem x allregs ->
-      Printf.fprintf oc "\tlw\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
+      Printf.fprintf oc "%d \tlw\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(x), Restore(y) ->
       assert (List.mem x allfregs);
-      Printf.fprintf oc "\tlfd\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
+      Printf.fprintf oc "%d \tlfd\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   (* �������ä���׻���̤����쥸�����˥��åȤ��ƥ꥿���� (caml2html: emit_tailret) *)
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
       g' oc (NonTail(Id.gentmp Type.Unit), exp);
-      Printf.fprintf oc "\tblr\n";
+      Printf.fprintf oc "%d \tblr\n" (pcincr());
   | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Slw _ | Lwz _ as exp) ->
       g' oc (NonTail(regs.(0)), exp);
-      Printf.fprintf oc "\tblr\n";
+      Printf.fprintf oc "%d \tblr\n" (pcincr()) ;
   | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ as exp) ->
       g' oc (NonTail(fregs.(0)), exp);
-      Printf.fprintf oc "\tblr\n";
+      Printf.fprintf oc "%d \tblr\n" (pcincr());
   | Tail, (Restore(x) as exp) ->
       (match locate x with
       | [i] -> g' oc (NonTail(regs.(0)), exp)
       | [i; j] when i + 1 = j -> g' oc (NonTail(fregs.(0)), exp)
       | _ -> assert false);
-      Printf.fprintf oc "\tblr\n";
+      Printf.fprintf oc "%d \tblr\n" (pcincr());
   | Tail, IfEq(x, V(y), e1, e2) ->
       Printf.fprintf oc "\tcmpw\tcr7, %s, %s\n" (reg x) (reg y);
       g'_tail_if oc e1 e2 "beq" "bne"
