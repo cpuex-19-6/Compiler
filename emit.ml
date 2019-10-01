@@ -4,7 +4,7 @@ external gethi : float -> int32 = "gethi"
 external getlo : float -> int32 = "getlo"
 
 let stackset = ref S.empty (* ���Ǥ�Save���줿�ѿ��ν��� (caml2html: emit_stackset) *)
-let stackmap = ref [] (* Save���줿�ѿ��Ρ������å��ˤ�������� (caml2html: emit_stackmap) *)
+let stackmap = ref [] (* Save���줿�ѿ��Ρ������å��ˤ��������? (caml2html: emit_stackmap) *)
 let save x =
   stackset := S.add x !stackset;
   if not (List.mem x !stackmap) then
@@ -37,7 +37,7 @@ let load_label r label =
 
 let address_list = Hashtbl.create 0
 
-(* ���bit�ʲ���12bit����¦�Ρ� *)
+(* ���?bit�ʲ���12bit����¦�Ρ� *)
 let upper n = n asr 12 + if n land (1 lsl 11) = 0 then 0 else 1
 (* ����12bit *)
 let lower n = (n lsl 51) asr 51
@@ -49,7 +49,7 @@ let pcincr () = let n = !pc in pc := n + 2; n
 let jpc = ref 0
 let jpincr() = (jpc := !jpc + 2)
 
-(* �ؿ��ƤӽФ��Τ���˰������¤��ؤ���(register shuffling) (caml2html: emit_shuffle) *)
+(* �ؿ��ƤӽФ��Τ���˰������¤��ؤ���?(register shuffling) (caml2html: emit_shuffle) *)
 let rec shuffle sw xys =
   (* remove identical moves *)
   let _, xys = List.partition (fun (x, y) -> x = y) xys in
@@ -122,7 +122,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       savef y;
       Printf.fprintf oc "%d \tstfd\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
-  (* �����β���̿��μ��� (caml2html: emit_restore) *)
+  (* �����β���̿��μ���? (caml2html: emit_restore) *)
   | NonTail(x), Restore(y) when List.mem x allregs ->
       Printf.fprintf oc "%d \tlw\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(x), Restore(y) ->
@@ -182,7 +182,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       g'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
   | NonTail(z), IfFLE(x, y, e1, e2) ->
       g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
-  (* �ؿ��ƤӽФ��β���̿��μ��� (caml2html: emit_call) *)
+  (* �ؿ��ƤӽФ��β���̿��μ���? (caml2html: emit_call) *)
   | Tail, CallCls(x, ys, zs) -> (* �����ƤӽФ� (caml2html: emit_tailcall) *)
       g'_args oc [(x, reg_cl)] ys zs;
       Printf.fprintf oc "%d\tlw\t%s, 0(%s)\n" (pcincr()) (reg reg_sw) (reg reg_cl);
@@ -317,7 +317,7 @@ and g'_args oc x_reg_cl ys zs =
         savef y;
         jpincr()
     | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
-    (* �����β���̿��μ��� (caml2html: emit_restore) *)
+    (* �����β���̿��μ���? (caml2html: emit_restore) *)
     | NonTail(x), Restore(y) when List.mem x allregs ->
         jpincr()
     | NonTail(x), Restore(y) ->
@@ -345,10 +345,10 @@ and g'_args oc x_reg_cl ys zs =
         jpincr();
         k'_tail_if oc e1 e2 "beq" "bne" x reg_tmp
     | Tail, IfLE(x, V(y), e1, e2) ->
-        k'_tail_if oc e1 e2 "ble" "bgt" x y 
+        k'_tail_if oc e1 e2 "bge" "blt" y x
     | Tail, IfLE(x, C(y), e1, e2) ->
         jpincr();
-        k'_tail_if oc e1 e2 "ble" "bgt" x reg_tmp
+        k'_tail_if oc e1 e2 "bge" "blt" reg_tmp x
     | Tail, IfGE(x, V(y), e1, e2) ->
         k'_tail_if oc e1 e2 "bge" "blt" x y
     | Tail, IfGE(x, C(y), e1, e2) ->
@@ -357,17 +357,17 @@ and g'_args oc x_reg_cl ys zs =
     | Tail, IfFEq(x, y, e1, e2) ->
         k'_tail_if oc e1 e2 "beq" "bne" x y
     | Tail, IfFLE(x, y, e1, e2) ->
-        k'_tail_if oc e1 e2 "ble" "bgt" x y
+        k'_tail_if oc e1 e2 "bge" "blt" y x
     | NonTail(z), IfEq(x, V(y), e1, e2) ->
         k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
     | NonTail(z), IfEq(x, C(y), e1, e2) ->
         jpincr();
         k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x reg_tmp
     | NonTail(z), IfLE(x, V(y), e1, e2) ->
-        k'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt" x y
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
     | NonTail(z), IfLE(x, C(y), e1, e2) ->
         jpincr();
-        k'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt" x reg_tmp
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" reg_tmp x
     | NonTail(z), IfGE(x, V(y), e1, e2) ->
         k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" x y
     | NonTail(z), IfGE(x, C(y), e1, e2) ->
@@ -376,8 +376,8 @@ and g'_args oc x_reg_cl ys zs =
     | NonTail(z), IfFEq(x, y, e1, e2) ->
         k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
     | NonTail(z), IfFLE(x, y, e1, e2) ->
-        k'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt" x y
-    (* �ؿ��ƤӽФ��β���̿��μ��� (caml2html: emit_call) *)
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
+    (* �ؿ��ƤӽФ��β���̿��μ���? (caml2html: emit_call) *)
     | Tail, CallCls(x, ys, zs) -> (* �����ƤӽФ� (caml2html: emit_tailcall) *)
         k'_args oc [(x, reg_cl)] ys zs;
         jpincr();jpincr()
