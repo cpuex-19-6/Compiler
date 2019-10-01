@@ -3,8 +3,8 @@ open Asm
 external gethi : float -> int32 = "gethi"
 external getlo : float -> int32 = "getlo"
 
-let stackset = ref S.empty (* ¤¹¤Ç¤ËSave¤µ¤ì¤¿ÊÑ¿ô¤Î½¸¹ç (caml2html: emit_stackset) *)
-let stackmap = ref [] (* Save¤µ¤ì¤¿ÊÑ¿ô¤Î¡¢¥¹¥¿¥Ã¥¯¤Ë¤ª¤±¤ë°ÌÃÖ (caml2html: emit_stackmap) *)
+let stackset = ref S.empty (* ï¿½ï¿½ï¿½Ç¤ï¿½Saveï¿½ï¿½ï¿½ì¤¿ï¿½Ñ¿ï¿½ï¿½Î½ï¿½ï¿½ï¿½ (caml2html: emit_stackset) *)
+let stackmap = ref [] (* Saveï¿½ï¿½ï¿½ì¤¿ï¿½Ñ¿ï¿½ï¿½Î¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_stackmap) *)
 let save x =
   stackset := S.add x !stackset;
   if not (List.mem x !stackmap) then
@@ -36,17 +36,17 @@ let load_label r label =
     r' label r' r' label
 
 
-(* ¾å°Ìbit¡Ê²¼°Ì12bit¤è¤ê¾åÂ¦¤Î¡Ë *)
+(* ï¿½ï¿½ï¿½bitï¿½Ê²ï¿½ï¿½ï¿½12bitï¿½ï¿½ï¿½ï¿½Â¦ï¿½Î¡ï¿½ *)
 let upper n = n asr 12 + if n land (1 lsl 11) = 0 then 0 else 1
-(* ²¼°Ì12bit *)
+(* ï¿½ï¿½ï¿½ï¿½12bit *)
 let lower n = (n lsl 51) asr 51
 
 
-(* ¹Ô¿ô¤ò¥«¥¦¥ó¥È¤Ç¤­¤ë¤è¤¦¤Ë¤¹¤ë *)
+(* ï¿½Ô¿ï¿½ï¿½ò¥«¥ï¿½ï¿½ï¿½È¤Ç¤ï¿½ï¿½ï¿½è¤¦ï¿½Ë¤ï¿½ï¿½ï¿½ *)
 let pc = ref 0
-let pcincr () = let n = !pc in pc := n + 1; n
+let pcincr () = let n = !pc in pc := n + 2; n
 
-(* ´Ø¿ô¸Æ¤Ó½Ð¤·¤Î¤¿¤á¤Ë°ú¿ô¤òÊÂ¤ÙÂØ¤¨¤ë(register shuffling) (caml2html: emit_shuffle) *)
+(* ï¿½Ø¿ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ï¿½Î¤ï¿½ï¿½ï¿½Ë°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¤ï¿½ï¿½Ø¤ï¿½ï¿½ï¿½(register shuffling) (caml2html: emit_shuffle) *)
 let rec shuffle sw xys =
   (* remove identical moves *)
   let _, xys = List.partition (fun (x, y) -> x = y) xys in
@@ -61,14 +61,14 @@ let rec shuffle sw xys =
                                          xys)
   | xys, acyc -> acyc @ shuffle sw xys
 
-type dest = Tail | NonTail of Id.t (* ËöÈø¤«¤É¤¦¤«¤òÉ½¤¹¥Ç¡¼¥¿·¿ (caml2html: emit_dest) *)
-let rec g oc = function (* Ì¿ÎáÎó¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_g) *)
+type dest = Tail | NonTail of Id.t (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¤ï¿½ï¿½ï¿½ï¿½ï¿½É½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_dest) *)
+let rec g oc = function (* Ì¿ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_g) *)
   | dest, Ans(exp) -> g' oc (dest, exp)
   | dest, Let((x, t), exp, e) ->
       g' oc (NonTail(x), exp);
       g oc (dest, e)
-and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
-  (* ËöÈø¤Ç¤Ê¤«¤Ã¤¿¤é·×»»·ë²Ì¤òdest¤Ë¥»¥Ã¥È (caml2html: emit_nontail) *)
+and g' oc = function (* ï¿½ï¿½Ì¿ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_gprime) *)
+  (* ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½ï¿½Ã¤ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ì¤ï¿½destï¿½Ë¥ï¿½ï¿½Ã¥ï¿½ (caml2html: emit_nontail) *)
   | NonTail(_), Nop -> ()
   | NonTail(x), Li(n) ->
       let u = upper n in
@@ -80,7 +80,7 @@ and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
         if l != 0 then
           Printf.fprintf oc "\taddi\t%s, %s, %d\n" (reg x) (reg x) l)
   | NonTail(x), FLi(Id.L(l)) ->
-      (* TODO: Li ¤ÈÆ±ÍÍ¤Ë½ñ¤­´¹¤¨ *)
+      (* TODO: Li ï¿½ï¿½Æ±ï¿½Í¤Ë½ñ¤­´ï¿½ï¿½ï¿½ *)
       let s = load_label (reg reg_tmp) l in
       Printf.fprintf oc "%s\tlfd\t%s, 0(%s)\n" s (reg x) (reg reg_tmp)
   | NonTail(x), SetL(Id.L(y)) ->
@@ -111,7 +111,7 @@ and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
   | NonTail(_), Stfd(x, y, V(z)) -> Printf.fprintf oc "\tstfdx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | NonTail(_), Stfd(x, y, C(z)) -> Printf.fprintf oc "\tstfd\t%s, %d(%s)\n" (reg x) z (reg y)
   | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
-  (* ÂàÈò¤Î²¾ÁÛÌ¿Îá¤Î¼ÂÁõ (caml2html: emit_save) *)
+  (* ï¿½ï¿½ï¿½ï¿½Î²ï¿½ï¿½ï¿½Ì¿ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ (caml2html: emit_save) *)
   | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
       save y;
       Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
@@ -119,13 +119,13 @@ and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
       savef y;
       Printf.fprintf oc "\tstfd\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
   | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
-  (* Éüµ¢¤Î²¾ÁÛÌ¿Îá¤Î¼ÂÁõ (caml2html: emit_restore) *)
+  (* ï¿½ï¿½ï¿½ï¿½ï¿½Î²ï¿½ï¿½ï¿½Ì¿ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ (caml2html: emit_restore) *)
   | NonTail(x), Restore(y) when List.mem x allregs ->
       Printf.fprintf oc "\tlw\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
   | NonTail(x), Restore(y) ->
       assert (List.mem x allfregs);
       Printf.fprintf oc "\tlfd\t%s, %d(%s)\n" (reg x) (offset y) (reg reg_sp)
-  (* ËöÈø¤À¤Ã¤¿¤é·×»»·ë²Ì¤òÂè°ì¥ì¥¸¥¹¥¿¤Ë¥»¥Ã¥È¤·¤Æ¥ê¥¿¡¼¥ó (caml2html: emit_tailret) *)
+  (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¤ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ì¤ï¿½ï¿½ï¿½ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½Ë¥ï¿½ï¿½Ã¥È¤ï¿½ï¿½Æ¥ê¥¿ï¿½ï¿½ï¿½ï¿½ (caml2html: emit_tailret) *)
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
       g' oc (NonTail(Id.gentmp Type.Unit), exp);
       Printf.fprintf oc "\tblr\n";
@@ -189,12 +189,12 @@ and g' oc = function (* ³ÆÌ¿Îá¤Î¥¢¥»¥ó¥Ö¥êÀ¸À® (caml2html: emit_gprime) *)
   | NonTail(z), IfFLE(x, y, e1, e2) ->
       Printf.fprintf oc "\tfcmpu\tcr7, %s, %s\n" (reg x) (reg y);
       g'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt"
-  (* ´Ø¿ô¸Æ¤Ó½Ð¤·¤Î²¾ÁÛÌ¿Îá¤Î¼ÂÁõ (caml2html: emit_call) *)
-  | Tail, CallCls(x, ys, zs) -> (* ËöÈø¸Æ¤Ó½Ð¤· (caml2html: emit_tailcall) *)
+  (* ï¿½Ø¿ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ï¿½Î²ï¿½ï¿½ï¿½Ì¿ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ (caml2html: emit_call) *)
+  | Tail, CallCls(x, ys, zs) -> (* ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ (caml2html: emit_tailcall) *)
       g'_args oc [(x, reg_cl)] ys zs;
       Printf.fprintf oc "\tlw\t%s, 0(%s)\n" (reg reg_sw) (reg reg_cl);
       Printf.fprintf oc "\tmtctr\t%s\n\tbctr\n" (reg reg_sw);
-  | Tail, CallDir(Id.L(x), ys, zs) -> (* ËöÈø¸Æ¤Ó½Ð¤· *)
+  | Tail, CallDir(Id.L(x), ys, zs) -> (* ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ *)
       g'_args oc [] ys zs;
       Printf.fprintf oc "\tb\t%s\n" x
   | NonTail(a), CallCls(x, ys, zs) ->
