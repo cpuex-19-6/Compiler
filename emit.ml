@@ -46,6 +46,8 @@ let lower n = (n lsl 51) asr 51
 (* �Կ��򥫥���ȤǤ���褦�ˤ��� *)
 let pc = ref 0
 let pcincr () = let n = !pc in pc := n + 2; n
+let jpc = ref 0
+let jpincr() = (jpc := !jpc + 2)
 
 (* �ؿ��ƤӽФ��Τ���˰������¤��ؤ���(register shuffling) (caml2html: emit_shuffle) *)
 let rec shuffle sw xys =
@@ -78,7 +80,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
         Printf.fprintf oc "%d \taddi\t%s, x0, %d\n" (pcincr()) (reg x) l
       else
         (Printf.fprintf oc "%d \tlui\t%s, %d\n" (pcincr()) (reg x) u;
-        if l != 0 then
+        if l <> 0 then
           Printf.fprintf oc "%d \taddi\t%s, %s, %d\n"(pcincr()) (reg x) (reg x) l)
   | NonTail(x), FLi(Id.L(l)) ->
       (* TODO: Li ��Ʊ�ͤ˽񤭴��� *)
@@ -129,13 +131,13 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
   (* �������ä���׻���̤����쥸�����˥��åȤ��ƥ꥿���� (caml2html: emit_tailret) *)
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
       g' oc (NonTail(Id.gentmp Type.Unit), exp);
-      Printf.fprintf oc "%d \tblr\n" (pcincr());
+      Printf.fprintf oc "%d \tjalr\tx0, x1, 0\n" (pcincr());
   | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Slw _ | Lwz _ as exp) ->
       g' oc (NonTail(regs.(0)), exp);
-      Printf.fprintf oc "%d \tblr\n" (pcincr()) ;
+      Printf.fprintf oc "%d \tjalr\tx0, x1, 0\n" (pcincr()) ;
   | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ as exp) ->
       g' oc (NonTail(fregs.(0)), exp);
-      Printf.fprintf oc "%d \tblr\n" (pcincr());
+      Printf.fprintf oc "%d \tjalr\tx0, x1, 0\n" (pcincr());
   | Tail, (Restore(x) as exp) ->
       (match locate x with
       | [i] -> g' oc (NonTail(regs.(0)), exp)
@@ -220,7 +222,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       Printf.fprintf oc "%d\tmtlr\t%s\n" (pcincr()) (reg reg_tmp)
 and g'_tail_if oc e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
-  Printf.fprintf oc "%d\t%s\t%s, %s, %s\n" (pcincr()) bn (reg x) (reg y) b_else;
+  Printf.fprintf oc "%d\t%s\t%s, %s, %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) -(!pc));
   let stackset_back = !stackset in
   g oc (Tail, e1);
   Printf.fprintf oc "# %s:\n" b_else;
@@ -229,7 +231,7 @@ and g'_tail_if oc e1 e2 b bn x y =
 and g'_non_tail_if oc dest e1 e2 b bn x y=
   let b_else = Id.genid (b ^ "_else") in
   let b_cont = Id.genid (b ^ "_cont") in
-  Printf.fprintf oc "%d\t%s\t%s, %s, %s\n" (pcincr()) bn (reg x) (reg y) b_else;
+  Printf.fprintf oc "%d\t%s\t%s, %s, %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else)-(!pc));
   let stackset_back = !stackset in
   g oc (dest, e1);
   let stackset1 = !stackset in
@@ -258,8 +260,192 @@ and g'_args oc x_reg_cl ys zs =
     (fun (z, fr) -> Printf.fprintf oc "\tfmr\t%s, %s\n" (reg fr) (reg z))
     (shuffle reg_fsw zfrs)
 
+ let rec k oc = function (* ̿����Υ�����֥����� (caml2html: emit_g) *)
+    | dest, Ans(exp) -> k' oc (dest, exp)
+    | dest, Let((x, t), exp, e) ->
+        k' oc (NonTail(x), exp);
+        k oc (dest, e)
+  and k' oc = function (* ��̿��Υ�����֥����� (caml2html: emit_gprime) *)
+    (* �����Ǥʤ��ä���׻���̤�dest�˥��å� (caml2html: emit_nontail) *)
+    | NonTail(_), Nop -> ()
+    | NonTail(x), Li(n) ->
+        let u = upper n in
+        let l = lower n in
+        if u = 0 then
+          jpincr()
+        else
+          (jpincr();
+          if l <> 0 then
+            jpincr())
+    | NonTail(x), FLi(Id.L(l)) ->
+        (* TODO: Li ��Ʊ�ͤ˽񤭴��� *)
+        let s = load_label (reg reg_tmp) l in
+        jpincr()
+    | NonTail(x), SetL(Id.L(y)) ->
+        let s = load_label x y in
+        Printf.fprintf oc "%s" s
+    | NonTail(x), Mr(y) when x = y -> ()
+    | NonTail(x), Mr(y) -> jpincr()
+    | NonTail(x), Neg(y) -> jpincr()
+    | NonTail(x), Add(y, V(z)) -> jpincr()
+    | NonTail(x), Add(y, C(z)) -> jpincr()
+    | NonTail(x), Sub(y, V(z)) -> jpincr()
+    | NonTail(x), Sub(y, C(z)) -> jpincr()
+    | NonTail(x), Slw(y, V(z)) -> jpincr()(* TODO: RISC-V *)
+    | NonTail(x), Slw(y, C(z)) -> jpincr()(* TODO: RISC-V *)
+    | NonTail(x), Lwz(y, V(z)) -> jpincr()(* TODO: RISC-V *)
+    | NonTail(x), Lwz(y, C(z)) -> jpincr()
+    | NonTail(_), Stw(x, y, V(z)) -> jpincr()
+    | NonTail(_), Stw(x, y, C(z)) -> jpincr()
+    | NonTail(x), FMr(y) when x = y -> ()
+    | NonTail(x), FMr(y) -> jpincr()
+    | NonTail(x), FNeg(y) -> jpincr()
+    | NonTail(x), FAdd(y, z) -> jpincr()
+    | NonTail(x), FSub(y, z) -> jpincr()
+    | NonTail(x), FMul(y, z) -> jpincr()
+    | NonTail(x), FDiv(y, z) -> jpincr()
+    | NonTail(x), Lfd(y, V(z)) -> jpincr()
+    | NonTail(x), Lfd(y, C(z)) -> jpincr()
+    | NonTail(_), Stfd(x, y, V(z)) -> jpincr()
+    | NonTail(_), Stfd(x, y, C(z)) -> jpincr()
+    | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
+    (* ����β���̿��μ��� (caml2html: emit_save) *)
+    | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
+        save y;
+        jpincr()
+    | NonTail(_), Save(x, y) when List.mem x allfregs && not (S.mem y !stackset) ->
+        savef y;
+        jpincr()
+    | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
+    (* �����β���̿��μ��� (caml2html: emit_restore) *)
+    | NonTail(x), Restore(y) when List.mem x allregs ->
+        jpincr()
+    | NonTail(x), Restore(y) ->
+        assert (List.mem x allfregs);
+        jpincr()
+    (* �������ä���׻���̤����쥸�����˥��åȤ��ƥ꥿���� (caml2html: emit_tailret) *)
+    | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
+        k' oc (NonTail(Id.gentmp Type.Unit), exp);
+        jpincr()
+    | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Slw _ | Lwz _ as exp) ->
+        k' oc (NonTail(regs.(0)), exp);
+        jpincr()
+    | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ as exp) ->
+        k' oc (NonTail(fregs.(0)), exp);
+        jpincr()
+    | Tail, (Restore(x) as exp) ->
+        (match locate x with
+        | [i] -> k' oc (NonTail(regs.(0)), exp)
+        | [i; j] when i + 1 = j -> k' oc (NonTail(fregs.(0)), exp)
+        | _ -> assert false);
+        jpincr()
+    | Tail, IfEq(x, V(y), e1, e2) ->
+        k'_tail_if oc e1 e2 "beq" "bne" x y 
+    | Tail, IfEq(x, C(y), e1, e2) ->
+        jpincr();
+        k'_tail_if oc e1 e2 "beq" "bne" x reg_tmp
+    | Tail, IfLE(x, V(y), e1, e2) ->
+        k'_tail_if oc e1 e2 "ble" "bgt" x y 
+    | Tail, IfLE(x, C(y), e1, e2) ->
+        jpincr();
+        k'_tail_if oc e1 e2 "ble" "bgt" x reg_tmp
+    | Tail, IfGE(x, V(y), e1, e2) ->
+        k'_tail_if oc e1 e2 "bge" "blt" x y
+    | Tail, IfGE(x, C(y), e1, e2) ->
+        jpincr();
+        k'_tail_if oc e1 e2 "bge" "blt" x reg_tmp
+    | Tail, IfFEq(x, y, e1, e2) ->
+        k'_tail_if oc e1 e2 "beq" "bne" x y
+    | Tail, IfFLE(x, y, e1, e2) ->
+        k'_tail_if oc e1 e2 "ble" "bgt" x y
+    | NonTail(z), IfEq(x, V(y), e1, e2) ->
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
+    | NonTail(z), IfEq(x, C(y), e1, e2) ->
+        jpincr();
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x reg_tmp
+    | NonTail(z), IfLE(x, V(y), e1, e2) ->
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt" x y
+    | NonTail(z), IfLE(x, C(y), e1, e2) ->
+        jpincr();
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt" x reg_tmp
+    | NonTail(z), IfGE(x, V(y), e1, e2) ->
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" x y
+    | NonTail(z), IfGE(x, C(y), e1, e2) ->
+        jpincr();
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" x reg_tmp
+    | NonTail(z), IfFEq(x, y, e1, e2) ->
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
+    | NonTail(z), IfFLE(x, y, e1, e2) ->
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "ble" "bgt" x y
+    (* �ؿ��ƤӽФ��β���̿��μ��� (caml2html: emit_call) *)
+    | Tail, CallCls(x, ys, zs) -> (* �����ƤӽФ� (caml2html: emit_tailcall) *)
+        k'_args oc [(x, reg_cl)] ys zs;
+        jpincr();jpincr()
+    | Tail, CallDir(Id.L(x), ys, zs) -> (* �����ƤӽФ� *)
+        k'_args oc [] ys zs;
+        jpincr()
+    | NonTail(a), CallCls(x, ys, zs) ->
+        jpincr();
+        k'_args oc [(x, reg_cl)] ys zs;
+        let ss = stacksize () in
+        jpc := !jpc + 14;
+        if List.mem a allregs && a <> regs.(0) then
+          jpincr()
+        else if List.mem a allfregs && a <> fregs.(0) then
+          jpincr();jpincr()
+    | (NonTail(a), CallDir(Id.L(x), ys, zs)) ->
+        jpincr();
+        k'_args oc [] ys zs;
+        let ss = stacksize () in
+        jpc := !jpc + 10;
+        if List.mem a allregs && a <> regs.(0) then
+          jpincr()
+        else if List.mem a allfregs && a <> fregs.(0) then
+          jpincr();jpincr()
+  and k'_tail_if oc e1 e2 b bn x y =
+    let b_else = Id.genid2 (b ^ "_else") in
+    jpincr();
+    let stackset_back = !stackset in
+    k oc (Tail, e1);
+    Hashtbl.add address_list b_else !jpc;
+    stackset := stackset_back;
+    k oc (Tail, e2)
+  and k'_non_tail_if oc dest e1 e2 b bn x y=
+    let b_else = Id.genid2 (b ^ "_else") in
+    let b_cont = Id.genid2 (b ^ "_cont") in
+    jpincr();
+    let stackset_back = !stackset in
+    k oc (dest, e1);
+    let stackset1 = !stackset in
+    jpincr();
+    Hashtbl.add address_list b_else !jpc;
+    stackset := stackset_back;
+    k oc (dest, e2);
+    Hashtbl.add address_list b_cont !jpc;
+    let stackset2 = !stackset in
+    stackset := S.inter stackset1 stackset2
+  and k'_args oc x_reg_cl ys zs =
+    let (i, yrs) =
+      List.fold_left
+        (fun (i, yrs) y -> (i + 1, (y, regs.(i)) :: yrs))
+        (0, x_reg_cl)
+        ys in
+    List.iter
+      (fun (y, r) -> jpincr())
+      (shuffle reg_sw yrs);
+    let (d, zfrs) =
+      List.fold_left
+        (fun (d, zfrs) z -> (d + 1, (z, fregs.(d)) :: zfrs))
+        (0, [])
+        zs in
+    List.iter
+      (fun (z, fr) -> jpincr())
+      (shuffle reg_fsw zfrs)
+  
+
 let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
   Printf.fprintf oc "# %s:\n" x;
+  k oc (Tail, e);
   stackset := S.empty;
   stackmap := [];
   Hashtbl.add address_list x !pc;
