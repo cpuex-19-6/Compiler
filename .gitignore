@@ -9,3 +9,4 @@ min-caml.top
 
 *.s
 *.o
+*.bin
