@@ -13,8 +13,7 @@ let genid s =
 
 let genid2 s =
   incr counter;
-  let n = !counter in counter := !counter - 1;
-  Printf.sprintf "%s.%d" s n
+  Printf.sprintf "%s.%d" s !counter
   
 
 let rec id_of_typ = function
