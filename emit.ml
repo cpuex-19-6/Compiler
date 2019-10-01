@@ -212,7 +212,9 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       let ss = stacksize () in
       Printf.fprintf oc "%d\tsw\t%s, %d(%s)\n" (pcincr()) (reg reg_tmp) (ss - 4) (reg reg_sp);
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss;
-      Printf.fprintf oc "%d\tjal\tx1, %d\n" (pcincr()) ((Hashtbl.find address_list x) - (!pc));
+      Printf.fprintf oc "%d\tjal\tx1, %d\n" (pcincr()) (try
+        (Hashtbl.find address_list x) - (!pc)
+        with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" x));
       Printf.fprintf oc "%d\taddi\t%s, %s, -%d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss;
       Printf.fprintf oc "%d\tlw\t%s, %d(%s)\n" (pcincr()) (reg reg_tmp) (ss - 4) (reg reg_sp);
       if List.mem a allregs && a <> regs.(0) then
@@ -222,7 +224,9 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       Printf.fprintf oc "%d\taddi\tx1, %s, 0\n" (pcincr()) (reg reg_tmp)
 and g'_tail_if oc e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
-  Printf.fprintf oc "%d\t%s \t%s, %s, %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) -(!pc));
+  Printf.fprintf oc "%d\t%s \t%s, %s, %d\n" (pcincr()) bn (reg x) (reg y) (try
+    (Hashtbl.find address_list b_else) -(!pc)
+    with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_else));
   let stackset_back = !stackset in
   g oc (Tail, e1);
   Printf.fprintf oc "# %s:\n" b_else;
@@ -231,7 +235,9 @@ and g'_tail_if oc e1 e2 b bn x y =
 and g'_non_tail_if oc dest e1 e2 b bn x y=
   let b_else = Id.genid (b ^ "_else") in
   let b_cont = Id.genid (b ^ "_cont") in
-  Printf.fprintf oc "%d\t%s\t%s, %s, %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else)-(!pc));
+  Printf.fprintf oc "%d\t%s\t%s, %s, %d\n" (pcincr()) bn (reg x) (reg y) (try
+    (Hashtbl.find address_list b_else)-(!pc)
+    with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_else));
   let stackset_back = !stackset in
   g oc (dest, e1);
   let stackset1 = !stackset in
