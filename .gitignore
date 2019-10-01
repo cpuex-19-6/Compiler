@@ -7,5 +7,5 @@
 min-caml
 min-caml.top
 
-test/*.s
+*.s
 *.o
