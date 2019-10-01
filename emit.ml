@@ -279,7 +279,7 @@ and g'_args oc x_reg_cl ys zs =
             jpincr())
     | NonTail(x), FLi(Id.L(l)) ->
         (* TODO: Li ��Ʊ�ͤ˽񤭴��� *)
-        let s = load_label (reg reg_tmp) l in
+        let _ = load_label (reg reg_tmp) l in
         jpincr()
     | NonTail(x), SetL(Id.L(y)) ->
         let s = load_label x y in
@@ -387,7 +387,7 @@ and g'_args oc x_reg_cl ys zs =
     | NonTail(a), CallCls(x, ys, zs) ->
         jpincr();
         k'_args oc [(x, reg_cl)] ys zs;
-        let ss = stacksize () in
+        let _ = stacksize () in
         jpc := !jpc + 14;
         if List.mem a allregs && a <> regs.(0) then
           jpincr()
@@ -396,7 +396,7 @@ and g'_args oc x_reg_cl ys zs =
     | (NonTail(a), CallDir(Id.L(x), ys, zs)) ->
         jpincr();
         k'_args oc [] ys zs;
-        let ss = stacksize () in
+        let _ = stacksize () in
         jpc := !jpc + 10;
         if List.mem a allregs && a <> regs.(0) then
           jpincr()
