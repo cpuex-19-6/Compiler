@@ -5,7 +5,7 @@ external gethi : float -> int32 = "gethi"
 external getlo : float -> int32 = "getlo"
 
 let stackset = ref S.empty (* ���Ǥ�Save���줿�ѿ��ν��� (caml2html: emit_stackset) *)
-let stackmap = ref [] (* Save���줿�ѿ��Ρ������å��ˤ��������? (caml2html: emit_stackmap) *)
+let stackmap = ref [] (* Save���줿�ѿ��Ρ������å��ˤ��������?? (caml2html: emit_stackmap) *)
 let save x =
   stackset := S.add x !stackset;
   if not (List.mem x !stackmap) then
@@ -38,7 +38,7 @@ let load_label r label =
 
 let address_list = Hashtbl.create 0
 
-(* ���?bit�ʲ���12bit����¦�Ρ� *)
+(* ���??bit�ʲ���12bit����¦�Ρ� *)
 let upper n = n asr 12 + if n land (1 lsl 11) = 0 then 0 else 1
 (* ����12bit *)
 let lower n = (n lsl 51) asr 51
@@ -52,7 +52,7 @@ let jpincr() = (jpc := !jpc + 2)
 let num_genid2 = ref 0
 
 
-(* �ؿ��ƤӽФ��Τ���˰������¤��ؤ���?(register shuffling) (caml2html: emit_shuffle) *)
+(* �ؿ��ƤӽФ��Τ���˰������¤��ؤ���??(register shuffling) (caml2html: emit_shuffle) *)
 let rec shuffle sw xys =
   (* remove identical moves *)
   let _, xys = List.partition (fun (x, y) -> x = y) xys in
@@ -125,7 +125,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       savef y;
       Printf.fprintf oc "%d \tstfd\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
-  (* �����β���̿��μ���? (caml2html: emit_restore) *)
+  (* �����β���̿��μ���?? (caml2html: emit_restore) *)
   | NonTail(x), Restore(y) when List.mem x allregs ->
       Printf.fprintf oc "%d \tlw\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(x), Restore(y) ->
@@ -185,7 +185,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       g'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
   | NonTail(z), IfFLE(x, y, e1, e2) ->
       g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
-  (* �ؿ��ƤӽФ��β���̿��μ���? (caml2html: emit_call) *)
+  (* �ؿ��ƤӽФ��β���̿��μ���?? (caml2html: emit_call) *)
   | Tail, CallCls(x, ys, zs) -> (* �����ƤӽФ� (caml2html: emit_tailcall) *)
       g'_args oc [(x, reg_cl)] ys zs;
       Printf.fprintf oc "%d\tlw\t%s, 0(%s)\n" (pcincr()) (reg reg_sw) (reg reg_cl);
@@ -326,7 +326,7 @@ and g'_args oc x_reg_cl ys zs =
         savef y;
         jpincr()
     | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
-    (* �����β���̿��μ���? (caml2html: emit_restore) *)
+    (* �����β���̿��μ���?? (caml2html: emit_restore) *)
     | NonTail(x), Restore(y) when List.mem x allregs ->
         jpincr()
     | NonTail(x), Restore(y) ->
@@ -386,7 +386,7 @@ and g'_args oc x_reg_cl ys zs =
         k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
     | NonTail(z), IfFLE(x, y, e1, e2) ->
         k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
-    (* �ؿ��ƤӽФ��β���̿��μ���? (caml2html: emit_call) *)
+    (* �ؿ��ƤӽФ��β���̿��μ���?? (caml2html: emit_call) *)
     | Tail, CallCls(x, ys, zs) -> (* �����ƤӽФ� (caml2html: emit_tailcall) *)
         k'_args oc [(x, reg_cl)] ys zs;
         jpincr();jpincr()
@@ -466,17 +466,18 @@ let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
   Hashtbl.add address_list x !pc;
   g oc (Tail, e)
 
+let kk oc fundefs =
+  List.iter (fun fundef -> k oc (Tail, fundef.body)) fundefs
+
 let f oc (Prog(data, fundefs, e)) =
   Format.eprintf "generating assembly...@.";
-  if data <> [] then
-    (Printf.fprintf oc "\t.data\n\t.literal8\n";
-     List.iter
-       (fun (Id.L(x), d) ->
-         Printf.fprintf oc "\t.align 3\n";
-         Printf.fprintf oc "# %s:\t %f\n" x d;
-         Printf.fprintf oc "\t.long\t%ld\n" (gethi d);
-         Printf.fprintf oc "\t.long\t%ld\n" (getlo d))
-       data);
+  kk oc fundefs;
+  Printf.fprintf oc "# jump to main entry point\n";
+  Printf.fprintf oc "0 \tjalr\tx0, x1, %d\n" (!jpc + 2);
+
+  pc := 2;
+  jpc := 2;
+
   List.iter (fun fundef -> h oc fundef) fundefs;
   Printf.fprintf oc "# main program starts\n";
   stackset := S.empty;
