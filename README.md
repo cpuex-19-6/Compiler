@@ -16,4 +16,4 @@ make
 ./min-caml test/fib
 ```
 
-で `test/` ディレクトリ内の `fib.ml` のアセンブラが同ディレクトリ内に出力されます。
+で `test/` ディレクトリ内の `fib.ml` のアセンブラ `fib.s` とバイナリ `fib.bin` がそれぞれ出力されます。
