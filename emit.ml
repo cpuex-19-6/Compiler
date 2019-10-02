@@ -192,7 +192,9 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       Printf.fprintf oc "%d\tmtctr\t%s\n\tbctr\n" (pcincr()) (reg reg_sw);
   | Tail, CallDir(Id.L(x), ys, zs) -> (* �����ƤӽФ� *)
       g'_args oc [] ys zs;
-      Printf.fprintf oc "%d\tb\t%s\n" (pcincr()) x
+      Printf.fprintf oc "%d\tjal\tx0, %d\n" (pcincr()) (try
+        (Hashtbl.find address_list x) - (!pc)
+        with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" x));
   | NonTail(a), CallCls(x, ys, zs) ->
       Printf.fprintf oc "%d\taddi\t%s, x1, 0\n" (pcincr()) (reg reg_tmp);
       g'_args oc [(x, reg_cl)] ys zs;
@@ -244,7 +246,9 @@ and g'_non_tail_if oc dest e1 e2 b bn x y=
   let stackset_back = !stackset in
   g oc (dest, e1);
   let stackset1 = !stackset in
-  Printf.fprintf oc "\tb\t%s\n" b_cont;
+  Printf.fprintf oc "%d\tjal\tx0, %d\n" (pcincr()) (try
+    (Hashtbl.find address_list b_cont) - (!pc)
+    with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_cont));
   Printf.fprintf oc "# %s:\n" b_else;
   stackset := stackset_back;
   g oc (dest, e2);
