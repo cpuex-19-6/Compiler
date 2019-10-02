@@ -64,9 +64,9 @@ let lower n = (n lsl 51) asr 51
 
 (* �Կ��򥫥���ȤǤ���褦�ˤ��� *)
 let pc = ref 0
-let pcincr () = let n = !pc in pc := n + 2; n
+let pcincr () = let n = !pc in pc := n + 4; n
 let jpc = ref 0
-let jpincr() = (jpc := !jpc + 2)
+let jpincr() = (jpc := !jpc + 4)
 let num_genid2 = ref 0
 
 
@@ -419,7 +419,7 @@ and g'_args oc x_reg_cl ys zs =
         jpincr();
         k'_args oc [(x, reg_cl)] ys zs;
         let _ = stacksize () in
-        jpc := !jpc + 14;
+        jpc := !jpc + 28;
         if List.mem a allregs && a <> regs.(0) then
           jpincr()
         else if List.mem a allfregs && a <> fregs.(0) then
@@ -428,7 +428,7 @@ and g'_args oc x_reg_cl ys zs =
         jpincr();
         k'_args oc [] ys zs;
         let _ = stacksize () in
-        jpc := !jpc + 10;
+        jpc := !jpc + 20;
         if List.mem a allregs && a <> regs.(0) then
           jpincr()
         else if List.mem a allfregs && a <> fregs.(0) then
@@ -495,10 +495,10 @@ let f oc (Prog(data, fundefs, e)) =
   Format.eprintf "generating assembly...@.";
   kk oc fundefs;
   Printf.fprintf oc "# jump to main entry point\n";
-  Printf.fprintf oc "0 \tjalr\tx0, x1, %d\n" (!jpc + 2);
+  Printf.fprintf oc "0 \tjalr\tx0, x1, %d\n" (!jpc + 4);
 
-  pc := 2;
-  jpc := 2;
+  pc := 4;
+  jpc := 4;
 
   List.iter (fun fundef -> h oc fundef) fundefs;
   Printf.fprintf oc "# main program starts\n";
