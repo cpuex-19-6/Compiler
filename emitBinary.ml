@@ -7,7 +7,7 @@ external getlo : float -> int32 = "getlo"
 (* Binary Helper Functions *)
 
 let rec int_to_binary_sub num len = 
-  if num > 0 then (string_of_int(num mod 2))^(int_to_binary_sub (num/2) (len-1))
+  if num > 0 then (int_to_binary_sub (num/2) (len-1))^(string_of_int(num mod 2))
   else if len > 0 then "0"^(int_to_binary_sub (num/2) (len-1))
   else ""
 
@@ -16,7 +16,7 @@ if num < 0 then int_to_binary_sub ((int_of_float (2. ** (float_of_int len))) + n
 else int_to_binary_sub num len
 
 let rec reg_to_binary r = 
-let first = (try String.index r 'r' with _ -> String.index r 'f') in
+let first = (try String.index r 'x' with _ -> String.index r 'f') in
 let length = (String.length r) - first - 1 in
 int_to_binary (int_of_string (String.sub r (first+1) length)) 5
 
