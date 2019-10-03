@@ -36,6 +36,10 @@ let addtyp x = (x, Type.gentyp ())
 %token LPAREN
 %token RPAREN
 %token EOF
+%token XOR
+%token FISZERO FLESS FISPOS FISNEG
+%token FNEG FABS FHALF FSQR FLOOR FLOATOFINT INTOFFLOAT SQRT COS SIN TAN ATAN
+%token READINT READFLOAT PRINTCHAR
 
 /* (* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) *) */
 %nonassoc IN
@@ -115,6 +119,37 @@ exp: /* (* 一般の式 (caml2html: parser_exp) *) */
     { FMul($1, $3) }
 | exp SLASH_DOT exp
     { FDiv($1, $3) }
+| XOR exp exp
+   %prec prec_app
+    { Xor($2,$3) }
+| FISZERO exp
+   %prec prec_app
+    { FEq($2, Float(0.)) }
+| FLESS exp exp
+   %prec prec_app
+    { FLE($2, $3) }
+| FISPOS exp
+   %prec prec_app
+    { FLE(Float(0.), $2) }
+| FISNEG exp
+   %prec prec_app
+    { FLE($2, Float(0.)) }
+| FNEG exp
+   %prec prec_app
+    { FNeg($2) }
+| FHALF exp
+    { FMul($2, Float(0.5)) }
+| FSQR exp
+   %prec prec_app
+    { FSqr($2) }
+| FABS exp
+    { FAbs($2) }
+| FLOOR exp
+    { FFloor($2) }
+| FLOATOFINT exp
+    { ItoF($2) }
+| INTOFFLOAT exp
+    { FtoI($2) }
 | LET IDENT EQUAL exp IN exp
     %prec prec_let
     { Let(addtyp $2, $4, $6) }

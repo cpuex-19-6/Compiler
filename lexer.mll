@@ -54,6 +54,46 @@ rule token = parse
     { LESS }
 | '>'
     { GREATER }
+| "xor"
+    { XOR }
+| "fiszero"
+    { FISZERO }
+| "fless"
+    { FLESS }
+| "fispos"
+    { FISPOS }
+| "fisneg"
+    { FISNEG }
+| "fneg"
+    { FNEG }
+| "fabs"
+    { FABS }
+| "fhalf"
+    { FHALF }
+| "fsqr"
+    { FSQR }
+| "floor"
+    { FLOOR }
+| "float_of_int"
+    { FLOATOFINT }
+| "int_of_float"
+    { INTOFFLOAT }
+| "sqrt"
+    { SQRT }
+| "cos"
+    { COS }
+| "sin"
+    { SIN }
+| "tan"
+    { TAN }
+| "atan"
+    { ATAN }
+| "read_int"
+    { READINT }
+| "read_float"
+    { READFLOAT }
+| "print_char"
+    { PRINTCHAR }
 | "if"
     { IF }
 | "then"

@@ -30,6 +30,26 @@ type token =
   | LPAREN
   | RPAREN
   | EOF
+  | XOR
+  | FISZERO
+  | FLESS
+  | FISPOS
+  | FISNEG
+  | FNEG
+  | FABS
+  | FHALF
+  | FSQR
+  | FLOOR
+  | FLOATOFINT
+  | INTOFFLOAT
+  | SQRT
+  | COS
+  | SIN
+  | TAN
+  | ATAN
+  | READINT
+  | READFLOAT
+  | PRINTCHAR
 
 val exp :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Syntax.t

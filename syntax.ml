@@ -4,6 +4,7 @@ type t = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | Int of int
   | Float of float
   | Not of t
+  | Xor of t * t
   | Neg of t
   | Add of t * t
   | Sub of t * t
@@ -14,6 +15,13 @@ type t = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | FDiv of t * t
   | Eq of t * t
   | LE of t * t
+  | FEq of t * t
+  | FLE of t * t
+  | FSqr of t
+  | FAbs of t
+  | FFloor of t
+  | ItoF of t
+  | FtoI of t
   | If of t * t * t
   | Let of (Id.t * Type.t) * t * t
   | Var of Id.t
