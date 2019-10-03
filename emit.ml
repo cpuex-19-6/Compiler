@@ -476,5 +476,3 @@ let f oc (Prog(data, fundefs, e)) =
   stackmap := [];
   g oc (NonTail("_R_0"), e);
   Printf.fprintf oc "# main program ends\n";
-  (* Printf.fprintf oc "\tmr\tr3, %s\n" regs.(0); *)
-  Printf.fprintf oc "%d\tjalr\tx0, x1, 0\n" (pcincr())
