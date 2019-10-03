@@ -10,3 +10,5 @@ min-caml.top
 *.s
 *.o
 *.bin
+
+.DS_Store
