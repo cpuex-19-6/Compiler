@@ -30,19 +30,12 @@ let reg r =
   then String.sub r 1 (String.length r - 1)
   else r
 
-let load_label r label =
-  let r' = reg r in
-  Printf.sprintf
-    "\tlis\t%s, ha16(%s)\n\taddi\t%s, %s, lo16(%s)\n"
-    r' label r' r' label
-
-let address_list = Hashtbl.create 0
-
 (* ���??bit�ʲ���12bit����¦�Ρ� *)
 let upper n = n asr 12 + if n land (1 lsl 11) = 0 then 0 else 1
 (* ����12bit *)
 let lower n = (n lsl 51) asr 51
 
+let address_list = Hashtbl.create 0
 
 (* �Կ��򥫥���ȤǤ���褦�ˤ��� *)
 let pc = ref 0
@@ -50,6 +43,12 @@ let pcincr () = let n = !pc in pc := n + 4; n
 let jpc = ref 0
 let jpincr() = (jpc := !jpc + 4)
 let num_genid2 = ref 0
+
+let load_label r label =
+  let r' = reg r in
+  Printf.sprintf
+    "%d\tlui\t%s, %d\n%d\taddi\t%s, %s, %d\n"
+   (pcincr()) r' (upper(Hashtbl.find address_list label)) (pcincr()) r' r' (lower(Hashtbl.find address_list label))
 
 
 (* �ؿ��ƤӽФ��Τ���˰������¤��ؤ���??(register shuffling) (caml2html: emit_shuffle) *)
@@ -93,29 +92,29 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       let s = load_label x y in
       Printf.fprintf oc "%s" s
   | NonTail(x), Mr(y) when x = y -> ()
-  | NonTail(x), Mr(y) -> Printf.fprintf oc "%d \taddi\t%s, %s, 0\n" (pcincr()) (reg x) (reg y)
-  | NonTail(x), Neg(y) -> Printf.fprintf oc "%d \tsub\t%s, x0, %s\n" (pcincr())(reg x) (reg y)
-  | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc "%d \tadd\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
-  | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "%d \taddi\t%s, %s, %d\n" (pcincr()) (reg x) (reg y) z
-  | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "%d \tsub\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
-  | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "%d \taddi\t%s, %s, -%d\n" (pcincr()) (reg x) (reg y) z
-  | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "%d \tslw\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)(* TODO: RISC-V *)
-  | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "%d \tslwi\t%s, %s, %d\n" (pcincr()) (reg x) (reg y) z (* TODO: RISC-V *)
-  | NonTail(x), Lwz(y, V(z)) -> Printf.fprintf oc "%d \tlwzx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z) (* TODO: RISC-V *)
-  | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc "%d \tlw\t%s, %d(%s)\n" (pcincr()) (reg x) z (reg y)
+  | NonTail(x), Mr(y) -> Printf.fprintf oc "%d\taddi\t%s, %s, 0\n" (pcincr()) (reg x) (reg y)
+  | NonTail(x), Neg(y) -> Printf.fprintf oc "%d\tsub\t%s, x0, %s\n" (pcincr())(reg x) (reg y)
+  | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc "%d\tadd\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, %d\n" (pcincr()) (reg x) (reg y) z
+  | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "%d\tsub\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, -%d\n" (pcincr()) (reg x) (reg y) z
+  | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "%d\tslw\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)(* TODO: RISC-V *)
+  | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "%d\tslwi\t%s, %s, %d\n" (pcincr()) (reg x) (reg y) z (* TODO: RISC-V *)
+  | NonTail(x), Lwz(y, V(z)) -> Printf.fprintf oc "%d\tlwzx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z) (* TODO: RISC-V *)
+  | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc "%d\tlw\t%s, %d(%s)\n" (pcincr()) (reg x) z (reg y)
   | NonTail(_), Stw(x, y, V(z)) -> Printf.fprintf oc "%d \tstwx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
   | NonTail(_), Stw(x, y, C(z)) -> Printf.fprintf oc "%d \tsw\t%s, %d(%s)\n" (pcincr()) (reg x) z (reg y)
   | NonTail(x), FMr(y) when x = y -> ()
-  | NonTail(x), FMr(y) -> Printf.fprintf oc "%d \tfmr\t%s, %s\n" (pcincr()) (reg x) (reg y)
-  | NonTail(x), FNeg(y) -> Printf.fprintf oc "%d \tfneg\t%s, %s\n" (pcincr()) (reg x) (reg y)
-  | NonTail(x), FAdd(y, z) -> Printf.fprintf oc "%d \tfadd\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
-  | NonTail(x), FSub(y, z) -> Printf.fprintf oc "%d \tfsub\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
-  | NonTail(x), FMul(y, z) -> Printf.fprintf oc "%d \tfmul\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
-  | NonTail(x), FDiv(y, z) -> Printf.fprintf oc "%d \tfdiv\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
-  | NonTail(x), Lfd(y, V(z)) -> Printf.fprintf oc "%d \tlfdx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
-  | NonTail(x), Lfd(y, C(z)) -> Printf.fprintf oc "%d \tlfd\t%s, %d(%s)\n" (pcincr())(reg x) z (reg y)
-  | NonTail(_), Stfd(x, y, V(z)) -> Printf.fprintf oc "%d \tstfdx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
-  | NonTail(_), Stfd(x, y, C(z)) -> Printf.fprintf oc "%d \tstfd\t%s, %d(%s)\n" (pcincr()) (reg x) z (reg y)
+  | NonTail(x), FMr(y) -> Printf.fprintf oc "%d\tfmr\t%s, %s\n" (pcincr()) (reg x) (reg y)
+  | NonTail(x), FNeg(y) -> Printf.fprintf oc "%d\tfneg\t%s, %s\n" (pcincr()) (reg x) (reg y)
+  | NonTail(x), FAdd(y, z) -> Printf.fprintf oc "%d\tfadd\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), FSub(y, z) -> Printf.fprintf oc "%d\tfsub\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), FMul(y, z) -> Printf.fprintf oc "%d\tfmul\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), FDiv(y, z) -> Printf.fprintf oc "%d\tfdiv\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), Lfd(y, V(z)) -> Printf.fprintf oc "%d\tlfdx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(x), Lfd(y, C(z)) -> Printf.fprintf oc "%d\tlfd\t%s, %d(%s)\n" (pcincr())(reg x) z (reg y)
+  | NonTail(_), Stfd(x, y, V(z)) -> Printf.fprintf oc "%d\tstfdx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
+  | NonTail(_), Stfd(x, y, C(z)) -> Printf.fprintf oc "%d\tstfd\t%s, %d(%s)\n" (pcincr()) (reg x) z (reg y)
   | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
   (* ����β���̿��μ��� (caml2html: emit_save) *)
   | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
@@ -127,17 +126,17 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
   | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
   (* �����β���̿��μ���?? (caml2html: emit_restore) *)
   | NonTail(x), Restore(y) when List.mem x allregs ->
-      Printf.fprintf oc "%d \tlw\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
+      Printf.fprintf oc "%d\tlw\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(x), Restore(y) ->
       assert (List.mem x allfregs);
-      Printf.fprintf oc "%d \tlfd\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
+      Printf.fprintf oc "%d\tlfd\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   (* �������ä���׻���̤����쥸�����˥��åȤ��ƥ꥿���� (caml2html: emit_tailret) *)
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
       g' oc (NonTail(Id.gentmp Type.Unit), exp);
-      Printf.fprintf oc "%d \tjalr\tx0, x1, 0\n" (pcincr());
+      Printf.fprintf oc "%d\tjalr\tx0, x1, 0\n" (pcincr());
   | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Slw _ | Lwz _ as exp) ->
       g' oc (NonTail(regs.(0)), exp);
-      Printf.fprintf oc "%d \tjalr\tx0, x1, 0\n" (pcincr()) ;
+      Printf.fprintf oc "%d\tjalr\tx0, x1, 0\n" (pcincr()) ;
   | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ as exp) ->
       g' oc (NonTail(fregs.(0)), exp);
       Printf.fprintf oc "%d \tjalr\tx0, x1, 0\n" (pcincr());
@@ -189,7 +188,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
   | Tail, CallCls(x, ys, zs) -> (* �����ƤӽФ� (caml2html: emit_tailcall) *)
       g'_args oc [(x, reg_cl)] ys zs;
       Printf.fprintf oc "%d\tlw\t%s, 0(%s)\n" (pcincr()) (reg reg_sw) (reg reg_cl);
-      Printf.fprintf oc "%d\tmtctr\t%s\n\tbctr\n" (pcincr()) (reg reg_sw);
+      Printf.fprintf oc "%d\tjalr\tx0, %s, 0\n" (pcincr()) (reg reg_sw);
   | Tail, CallDir(Id.L(x), ys, zs) -> (* �����ƤӽФ� *)
       g'_args oc [] ys zs;
       Printf.fprintf oc "%d\tjal\tx0, %d\n" (pcincr()) (try
@@ -202,8 +201,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       Printf.fprintf oc "%d\tsw\t%s, %d(%s)\n" (pcincr()) (reg reg_tmp) (ss - 4) (reg reg_sp);
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss;
       Printf.fprintf oc "%d\tlw\t%s, 0(%s)\n" (pcincr()) (reg reg_tmp) (reg reg_cl);
-      Printf.fprintf oc "%d\tmtctr\t%s\n" (pcincr()) (reg reg_tmp);
-      Printf.fprintf oc "%d\tbctrl\n" (pcincr());
+      Printf.fprintf oc "%d\tjalr\tx1, %s, 0\n" (pcincr()) (reg reg_tmp);
       Printf.fprintf oc "%d\taddi\t%s, %s, -%d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss;
       Printf.fprintf oc "%d\tlw\t%s, %d(%s)\n" (pcincr()) (reg reg_tmp) (ss - 4) (reg reg_sp);
       if List.mem a allregs && a <> regs.(0) then
@@ -292,11 +290,11 @@ and g'_args oc x_reg_cl ys zs =
             jpincr())
     | NonTail(x), FLi(Id.L(l)) ->
         (* TODO: Li ��Ʊ�ͤ˽񤭴��� *)
-        let _ = load_label (reg reg_tmp) l in
+        (*let _ = load_label (reg reg_tmp) l in*)
         jpincr()
     | NonTail(x), SetL(Id.L(y)) ->
-        let s = load_label x y in
-        Printf.fprintf oc "%s" s
+        (*let s = load_label x y in
+        Printf.fprintf oc "%s" s*)()
     | NonTail(x), Mr(y) when x = y -> ()
     | NonTail(x), Mr(y) -> jpincr()
     | NonTail(x), Neg(y) -> jpincr()
@@ -401,7 +399,7 @@ and g'_args oc x_reg_cl ys zs =
         jpincr();
         k'_args oc [(x, reg_cl)] ys zs;
         let _ = stacksize () in
-        jpc := !jpc + 28;
+        jpc := !jpc + 24;
         if List.mem a allregs && a <> regs.(0) then
           jpincr()
         else if List.mem a allfregs && a <> fregs.(0) then
