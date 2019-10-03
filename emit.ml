@@ -4,8 +4,8 @@ open Id
 external gethi : float -> int32 = "gethi"
 external getlo : float -> int32 = "getlo"
 
-let stackset = ref S.empty (* ���Ǥ�Save���줿�ѿ��ν��� (caml2html: emit_stackset) *)
-let stackmap = ref [] (* Save���줿�ѿ��Ρ������å��ˤ��������?? (caml2html: emit_stackmap) *)
+let stackset = ref S.empty (* すでにSaveされた変数の集合 (caml2html: emit_stackset) *)
+let stackmap = ref [] (* Saveされた変数の、スタックにおける位置 (caml2html: emit_stackmap) *)
 let save x =
   stackset := S.add x !stackset;
   if not (List.mem x !stackmap) then
@@ -30,14 +30,11 @@ let reg r =
   then String.sub r 1 (String.length r - 1)
   else r
 
-(* ���??bit�ʲ���12bit����¦�Ρ� *)
 let upper n = n asr 12 + if n land (1 lsl 11) = 0 then 0 else 1
-(* ����12bit *)
 let lower n = (n lsl 51) asr 51
 
 let address_list = Hashtbl.create 0
 
-(* �Կ��򥫥���ȤǤ���褦�ˤ��� *)
 let pc = ref 0
 let pcincr () = let n = !pc in pc := n + 4; n
 let jpc = ref 0
@@ -51,7 +48,7 @@ let load_label r label =
    (pcincr()) r' (upper(Hashtbl.find address_list label)) (pcincr()) r' r' (lower(Hashtbl.find address_list label))
 
 
-(* �ؿ��ƤӽФ��Τ���˰������¤��ؤ���??(register shuffling) (caml2html: emit_shuffle) *)
+(* 関数呼び出しのために引数を並べ替える(register shuffling) (caml2html: emit_shuffle) *)
 let rec shuffle sw xys =
   (* remove identical moves *)
   let _, xys = List.partition (fun (x, y) -> x = y) xys in
@@ -66,14 +63,14 @@ let rec shuffle sw xys =
                                          xys)
   | xys, acyc -> acyc @ shuffle sw xys
 
-type dest = Tail | NonTail of Id.t (* �������ɤ�����ɽ���ǡ����� (caml2html: emit_dest) *)
-let rec g oc = function (* ̿����Υ�����֥����� (caml2html: emit_g) *)
+type dest = Tail | NonTail of Id.t (* 末尾かどうかを表すデータ型 (caml2html: emit_dest) *)
+let rec g oc = function (* 命令列のアセンブリ生成 (caml2html: emit_g) *)
   | dest, Ans(exp) -> g' oc (dest, exp)
   | dest, Let((x, t), exp, e) ->
       g' oc (NonTail(x), exp);
       g oc (dest, e)
-and g' oc = function (* ��̿��Υ�����֥����� (caml2html: emit_gprime) *)
-  (* �����Ǥʤ��ä���׻���̤�dest�˥��å� (caml2html: emit_nontail) *)
+and g' oc = function (* 各命令のアセンブリ生成 (caml2html: emit_gprime) *)
+  (* 末尾でなかったら計算結果をdestにセット (caml2html: emit_nontail) *)
   | NonTail(_), Nop -> ()
   | NonTail(x), Li(n) ->
       let u = upper n in
@@ -85,7 +82,6 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
         if l <> 0 then
           Printf.fprintf oc "%d \taddi\t%s, %s, %d\n"(pcincr()) (reg x) (reg x) l)
   | NonTail(x), FLi(Id.L(l)) ->
-      (* TODO: Li ��Ʊ�ͤ˽񤭴��� *)
       let s = load_label (reg reg_tmp) l in
       Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\n"(pcincr()) s (reg x) (reg reg_tmp);
   | NonTail(x), SetL(Id.L(y)) ->
@@ -116,7 +112,7 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
   | NonTail(_), Stfd(x, y, V(z)) -> Printf.fprintf oc "%d\tstfdx\t%s, %s, %s\n" (pcincr()) (reg x) (reg y) (reg z)
   | NonTail(_), Stfd(x, y, C(z)) -> Printf.fprintf oc "%d\tstfd\t%s, %d(%s)\n" (pcincr()) (reg x) z (reg y)
   | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
-  (* ����β���̿��μ��� (caml2html: emit_save) *)
+  (* 退避の仮想命令の実装 (caml2html: emit_save) *)
   | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
       save y;
       Printf.fprintf oc "%d \tsw\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
@@ -124,13 +120,13 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       savef y;
       Printf.fprintf oc "%d \tstfd\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
-  (* �����β���̿��μ���?? (caml2html: emit_restore) *)
+  (* 復帰の仮想命令の実装 (caml2html: emit_restore) *)
   | NonTail(x), Restore(y) when List.mem x allregs ->
       Printf.fprintf oc "%d\tlw\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
   | NonTail(x), Restore(y) ->
       assert (List.mem x allfregs);
       Printf.fprintf oc "%d\tlfd\t%s, %d(%s)\n" (pcincr()) (reg x) (offset y) (reg reg_sp)
-  (* �������ä���׻���̤����쥸�����˥��åȤ��ƥ꥿���� (caml2html: emit_tailret) *)
+  (* 末尾だったら計算結果を第一レジスタにセットしてリターン (caml2html: emit_tailret) *)
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
       g' oc (NonTail(Id.gentmp Type.Unit), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\n" (pcincr());
@@ -184,12 +180,12 @@ and g' oc = function (* ��̿��Υ�����֥����� (caml2h
       g'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
   | NonTail(z), IfFLE(x, y, e1, e2) ->
       g'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
-  (* �ؿ��ƤӽФ��β���̿��μ���?? (caml2html: emit_call) *)
-  | Tail, CallCls(x, ys, zs) -> (* �����ƤӽФ� (caml2html: emit_tailcall) *)
+  (* 関数呼び出しの仮想命令の実装 (caml2html: emit_call) *)
+  | Tail, CallCls(x, ys, zs) -> (* 末尾呼び出し (caml2html: emit_tailcall) *)
       g'_args oc [(x, reg_cl)] ys zs;
       Printf.fprintf oc "%d\tlw\t%s, 0(%s)\n" (pcincr()) (reg reg_sw) (reg reg_cl);
       Printf.fprintf oc "%d\tjalr\tx0, %s, 0\n" (pcincr()) (reg reg_sw);
-  | Tail, CallDir(Id.L(x), ys, zs) -> (* �����ƤӽФ� *)
+  | Tail, CallDir(Id.L(x), ys, zs) -> (* 末尾呼び出し *)
       g'_args oc [] ys zs;
       Printf.fprintf oc "%d\tjal\tx0, %d\n" (pcincr()) (try
         (Hashtbl.find address_list x) - (!pc)
@@ -271,13 +267,12 @@ and g'_args oc x_reg_cl ys zs =
     (fun (z, fr) -> Printf.fprintf oc "\tfmr\t%s, %s\n" (reg fr) (reg z))
     (shuffle reg_fsw zfrs)
 
- let rec k oc = function (* ̿����Υ�����֥����� (caml2html: emit_g) *)
+ let rec k oc = function
     | dest, Ans(exp) -> k' oc (dest, exp)
     | dest, Let((x, t), exp, e) ->
         k' oc (NonTail(x), exp);
         k oc (dest, e)
-  and k' oc = function (* ��̿��Υ�����֥����� (caml2html: emit_gprime) *)
-    (* �����Ǥʤ��ä���׻���̤�dest�˥��å� (caml2html: emit_nontail) *)
+  and k' oc = function
     | NonTail(_), Nop -> ()
     | NonTail(x), Li(n) ->
         let u = upper n in
@@ -289,7 +284,6 @@ and g'_args oc x_reg_cl ys zs =
           if l <> 0 then
             jpincr())
     | NonTail(x), FLi(Id.L(l)) ->
-        (* TODO: Li ��Ʊ�ͤ˽񤭴��� *)
         (*let _ = load_label (reg reg_tmp) l in*)
         jpincr()
     | NonTail(x), SetL(Id.L(y)) ->
@@ -302,9 +296,9 @@ and g'_args oc x_reg_cl ys zs =
     | NonTail(x), Add(y, C(z)) -> jpincr()
     | NonTail(x), Sub(y, V(z)) -> jpincr()
     | NonTail(x), Sub(y, C(z)) -> jpincr()
-    | NonTail(x), Slw(y, V(z)) -> jpincr()(* TODO: RISC-V *)
-    | NonTail(x), Slw(y, C(z)) -> jpincr()(* TODO: RISC-V *)
-    | NonTail(x), Lwz(y, V(z)) -> jpincr()(* TODO: RISC-V *)
+    | NonTail(x), Slw(y, V(z)) -> jpincr()
+    | NonTail(x), Slw(y, C(z)) -> jpincr()
+    | NonTail(x), Lwz(y, V(z)) -> jpincr()
     | NonTail(x), Lwz(y, C(z)) -> jpincr()
     | NonTail(_), Stw(x, y, V(z)) -> jpincr()
     | NonTail(_), Stw(x, y, C(z)) -> jpincr()
@@ -320,7 +314,6 @@ and g'_args oc x_reg_cl ys zs =
     | NonTail(_), Stfd(x, y, V(z)) -> jpincr()
     | NonTail(_), Stfd(x, y, C(z)) -> jpincr()
     | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
-    (* ����β���̿��μ��� (caml2html: emit_save) *)
     | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
         save y;
         jpincr()
@@ -328,13 +321,11 @@ and g'_args oc x_reg_cl ys zs =
         savef y;
         jpincr()
     | NonTail(_), Save(x, y) -> assert (S.mem y !stackset); ()
-    (* �����β���̿��μ���?? (caml2html: emit_restore) *)
     | NonTail(x), Restore(y) when List.mem x allregs ->
         jpincr()
     | NonTail(x), Restore(y) ->
         assert (List.mem x allfregs);
         jpincr()
-    (* �������ä���׻���̤����쥸�����˥��åȤ��ƥ꥿���� (caml2html: emit_tailret) *)
     | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
         k' oc (NonTail(Id.gentmp Type.Unit), exp);
         jpincr()
@@ -388,11 +379,10 @@ and g'_args oc x_reg_cl ys zs =
         k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
     | NonTail(z), IfFLE(x, y, e1, e2) ->
         k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
-    (* �ؿ��ƤӽФ��β���̿��μ���?? (caml2html: emit_call) *)
-    | Tail, CallCls(x, ys, zs) -> (* �����ƤӽФ� (caml2html: emit_tailcall) *)
+    | Tail, CallCls(x, ys, zs) -> 
         k'_args oc [(x, reg_cl)] ys zs;
         jpincr();jpincr()
-    | Tail, CallDir(Id.L(x), ys, zs) -> (* �����ƤӽФ� *)
+    | Tail, CallDir(Id.L(x), ys, zs) ->
         k'_args oc [] ys zs;
         jpincr()
     | NonTail(a), CallCls(x, ys, zs) ->
