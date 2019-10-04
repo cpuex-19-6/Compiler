@@ -1,4 +1,5 @@
-type t =
+type t = int * tt
+and tt =
   | Unit
   | Int of int
   | Float of float

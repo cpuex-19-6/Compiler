@@ -2,8 +2,8 @@
 
 type id_or_imm = V of Id.t | C of int
 type t = (* 命令の列 (caml2html: sparcasm_t) *)
-  | Ans of exp
-  | Let of (Id.t * Type.t) * exp * t
+  | Ans of int * exp
+  | Let of int * (Id.t * Type.t) * exp * t
 and exp = (* 一つ一つの命令に対応する式 (caml2html: sparcasm_exp) *)
   | Nop
   | Li of int
@@ -40,8 +40,8 @@ type fundef = { name : Id.l; args : Id.t list; fargs : Id.t list; body : t; ret 
 (* プログラム全体 = 浮動小数点数テーブル + トップレベル関数 + メインの式 (caml2html: sparcasm_prog) *)
 type prog = Prog of (Id.l * float) list * fundef list * t
 
-let fletd(x, e1, e2) = Let((x, Type.Float), e1, e2)
-let seq(e1, e2) = Let((Id.gentmp Type.Unit, Type.Unit), e1, e2)
+let fletd(n, x, e1, e2) = Let(n, (x, Type.Float), e1, e2)
+let seq(n, e1, e2) = Let(n, (Id.gentmp Type.Unit, Type.Unit), e1, e2)
 
 let regs = (* Array.init 27 (fun i -> Printf.sprintf "_R_%d" i) *)
   [| "%x4"; "%x5"; "%x6"; "%x7"; "%x8"; "%x9"; "%x10";
@@ -84,14 +84,14 @@ let rec fv_exp = function
   | CallCls(x, ys, zs) -> x :: ys @ zs
   | CallDir(_, ys, zs) -> ys @ zs
 and fv = function
-  | Ans(exp) -> fv_exp exp
-  | Let((x, t), exp, e) ->
+  | Ans(_, exp) -> fv_exp exp
+  | Let(_, (x, t), exp, e) ->
       fv_exp exp @ remove_and_uniq (S.singleton x) (fv e)
 let fv e = remove_and_uniq S.empty (fv e)
 
-let rec concat e1 xt e2 =
+let rec concat n e1 xt e2 =
   match e1 with
-  | Ans(exp) -> Let(xt, exp, e2)
-  | Let(yt, exp, e1') -> Let(yt, exp, concat e1' xt e2)
+  | Ans(n', exp) -> Let(n', xt, exp, e2)
+  | Let(n', yt, exp, e1') -> Let(n', yt, exp, concat n' e1' xt e2)
 
 let align i = (if i mod 8 = 0 then i else i + 4)
