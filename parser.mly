@@ -4,7 +4,57 @@ open Syntax
 let addtyp x = (x, Type.gentyp ())
 
 let start_pos = Parsing.symbol_start_pos ()
+let letfloat x e1 e2 = 0,Let((x, Type.Int), e1, e2)
+let letint x e1 e2 = 0,Let((x, Type.Int), e1,e2)
+let (&!) e n = AndI(e,n)
+let var x = 0,Var x
+let int n = 0,Int n
+let float f = 0,Float f
+let ftoi e = 0,FtoI e
+let itof e = 0,ItoF e
+let (+!) e1 e2 = 0,FAdd(e1,e2)
+let (-!) e1 e2 = 0,FSub(e1,e2)
+let ( *!) e1 e2 = 0,FMul(e1,e2)
+let (/!) e1 e2 = 0,FDiv(e1,e2) 
+
+let cos e =
+  letfloat "x" e @@
+  letfloat "xx" (var "x" *! var "x") @@
+  letfloat "t2" (var "xx" /! float 2.) @@
+  letfloat "t4" (var "t2" *! var "xx" /! float 12.) @@
+  letfloat "t6" (var "t4" *! var "xx" /! float 30.) @@
+  letfloat "t8" (var "t6" *! var "xx" /! float 56.) @@
+  letfloat "t10" (var "t8" *! var "xx" /! float 90.) @@
+  float 1. -! var "t2" +! var "t4" -! var "t6" +! var "t8" -! var "t10"
+
+let pi = float 3.1415927
+
+let sin e =
+  letfloat "x" e @@
+  letint "n" (ftoi (var "x" /! pi)) @@
+  (float 1. -! itof (var "n" &! 1) *! float 2.) *!
+    cos (var "x" -! itof (var "n") *! pi -! pi /! float 2.)
+
+let tan e =
+  letfloat "x" e @@
+  letfloat "xx" (var "x" *! var "x") @@
+  letfloat "t3" (var "x" *! var "xx" /! float 3.) @@
+  letfloat "t5" (var "t3" *! var "xx" *! (float 2. /! float 5.)) @@
+  letfloat "t7" (var "t5" *! var "xx" *! (float 17. /! float 42.)) @@
+  letfloat "t9" (var "t7" *! var "xx" *! (float 62. /! float 153.)) @@
+  var "x" +! var "t3" +! var "t5" +! var "t7" +! var "t9"
+
+let atan e =
+  letfloat "x" e @@
+  letfloat "t1" ((var "x" -! float 2.) /! float 5.) @@
+  letfloat "t2" ((var "t1" *! var "t1" *! float 2.)) @@
+  letfloat "t3" ((var "t2" *! var "t1" *! (float 11. /! float 6.))) @@
+  letfloat "t4" ((var "t3" *! var "t1" *! (float 18. /! float 11.))) @@
+  letfloat "t5" ((var "t4" *! var "t1" *! (float 41. /! float 30.))) @@
+  float 1.10714872 +! var "t1" -! var "t2" +! var "t3" -! var "t4" +! var "t5"
+
 %}
+
 
 /* (* 字句を表すデータ型の定義 (caml2html: parser_token) *) */
 %token <bool> BOOL
@@ -152,6 +202,22 @@ exp: /* (* 一般の式 (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, ItoF($2) }
 | INTOFFLOAT exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FtoI($2) }
+| SQRT exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FSqrt($2) }
+| COS exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(cos $2) }
+| SIN exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(sin $2) }
+| TAN exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(tan $2) }
+| ATAN exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(atan $2) }
+| READINT exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Read }
+| READFLOAT exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FRead }
+| PRINTCHAR exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Write($2) }
 | LET IDENT EQUAL exp IN exp
     %prec prec_let
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Let(addtyp $2, $4, $6) }
