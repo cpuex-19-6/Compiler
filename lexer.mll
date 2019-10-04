@@ -86,8 +86,6 @@ rule token = parse
     { COS }
 | "sin"
     { SIN }
-| "tan"
-    { TAN }
 | "atan"
     { ATAN }
 | "read_int"

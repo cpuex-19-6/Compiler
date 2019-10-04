@@ -210,8 +210,6 @@ exp: /* (* ∞Ï»Ã§Œº∞ (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(cos $2) }
 | SIN simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(sin $2) }
-| TAN simple_exp
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(tan $2) }
 | ATAN simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(atan $2) }
 | READINT simple_exp
