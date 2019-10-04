@@ -6,7 +6,7 @@ let addtyp x = (x, Type.gentyp ())
 let start_pos = Parsing.symbol_start_pos ()
 let letfloat x e1 e2 = 0,Let((x, Type.Int), e1, e2)
 let letint x e1 e2 = 0,Let((x, Type.Int), e1,e2)
-let (&!) e n = AndI(e,n)
+let (&!) e n = 0,AndI(e,n)
 let var x = 0,Var x
 let int n = 0,Int n
 let float f = 0,Float f
@@ -16,6 +16,8 @@ let (+!) e1 e2 = 0,FAdd(e1,e2)
 let (-!) e1 e2 = 0,FSub(e1,e2)
 let ( *!) e1 e2 = 0,FMul(e1,e2)
 let (/!) e1 e2 = 0,FDiv(e1,e2) 
+
+let start = Parsing.symbol_start_pos ()
 
 let cos e =
   letfloat "x" e @@
@@ -32,7 +34,7 @@ let pi = float 3.1415927
 let sin e =
   letfloat "x" e @@
   letint "n" (ftoi (var "x" /! pi)) @@
-  (float 1. -! itof (var "n" &! 1) *! float 2.) *!
+  
     cos (var "x" -! itof (var "n") *! pi -! pi /! float 2.)
 
 let tan e =

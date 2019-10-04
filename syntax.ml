@@ -25,7 +25,8 @@ and tt = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | FtoI of t
   | FSqrt of t
   | Read
-  | Write
+  | FRead
+  | Write of t
   | AndI of t
   | If of t * t * t
   | Let of (Id.t * Type.t) * t * t
