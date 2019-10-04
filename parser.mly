@@ -135,90 +135,90 @@ simple_exp: /* (* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simp
 exp: /* (* 一般の式 (caml2html: parser_exp) *) */
 | simple_exp
     { $1 }
-| NOT exp
+| NOT simple_exp
     %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Not($2) }
-| MINUS exp
+| MINUS simple_exp
     %prec prec_unary_minus
     { let (ln, e) = $2 in match e with
     | Float(f) -> ln, Float(-.f) (* -1.23などは型エラーではないので別扱い *)
     | e -> ln, Neg($2) }
-| exp PLUS exp /* (* 足し算を構文解析するルール (caml2html: parser_add) *) */
+| simple_exp PLUS simple_exp /* (* 足し算を構文解析するルール (caml2html: parser_add) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Add($1, $3) }
-| exp MINUS exp
+| simple_exp MINUS simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Sub($1, $3) }
-| exp EQUAL exp
+| simple_exp EQUAL simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Eq($1, $3) }
-| exp LESS_GREATER exp
+| simple_exp LESS_GREATER simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Not(let start = Parsing.symbol_start_pos () in start.pos_lnum, Eq($1, $3)) }
-| exp LESS exp
+| simple_exp LESS simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Not(let start = Parsing.symbol_start_pos () in start.pos_lnum, LE($3, $1)) }
-| exp GREATER exp
+| simple_exp GREATER simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Not(let start = Parsing.symbol_start_pos () in start.pos_lnum, LE($1, $3)) }
-| exp LESS_EQUAL exp
+| simple_exp LESS_EQUAL simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, LE($1, $3) }
-| exp GREATER_EQUAL exp
+| simple_exp GREATER_EQUAL simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, LE($3, $1) }
 | IF exp THEN exp ELSE exp
     %prec prec_if
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, If($2, $4, $6) }
-| MINUS_DOT exp
+| MINUS_DOT simple_exp
     %prec prec_unary_minus
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FNeg($2) }
-| exp PLUS_DOT exp
+| simple_exp PLUS_DOT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FAdd($1, $3) }
-| exp MINUS_DOT exp
+| simple_exp MINUS_DOT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FSub($1, $3) }
-| exp AST_DOT exp
+| simple_exp AST_DOT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FMul($1, $3) }
-| exp SLASH_DOT exp
+| simple_exp SLASH_DOT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FDiv($1, $3) }
-| XOR exp exp
+| XOR simple_exp simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Xor($2,$3) }
-| FISZERO exp
+| FISZERO simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FEq($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.))) }
-| FLESS exp exp
+| FLESS simple_exp simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLE($2, $3) }
-| FISPOS exp
+| FISPOS simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLE((let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.)), $2) }
-| FISNEG exp
+| FISNEG simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLE($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.))) }
-| FNEG exp
+| FNEG simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FNeg($2) }
-| FHALF exp
+| FHALF simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FMul($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.5))) }
-| FSQR exp
+| FSQR simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FSqr($2) }
-| FABS exp
+| FABS simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FAbs($2) }
-| FLOOR exp
+| FLOOR simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FFloor($2) }
-| FLOATOFINT exp
+| FLOATOFINT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, ItoF($2) }
-| INTOFFLOAT exp
+| INTOFFLOAT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FtoI($2) }
-| SQRT exp
+| SQRT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FSqrt($2) }
-| COS exp
+| COS simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(cos $2) }
-| SIN exp
+| SIN simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(sin $2) }
-| TAN exp
+| TAN simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(tan $2) }
-| ATAN exp
+| ATAN simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(atan $2) }
-| READINT exp
+| READINT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Read }
-| READFLOAT exp
+| READFLOAT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FRead }
-| PRINTCHAR exp
+| PRINTCHAR simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Write($2) }
 | LET IDENT EQUAL exp IN exp
     %prec prec_let
