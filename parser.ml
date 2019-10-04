@@ -89,7 +89,7 @@ let pi = float 3.1415927
 let sin e =
   letfloat "x" e @@
   letint "n" (ftoi (var "x" /! pi)) @@
-  
+  (float 1. -! itof (var "n" &! 1) *! float 2.) *!
     cos (var "x" -! itof (var "n") *! pi -! pi /! float 2.)
 
 let tan e =
