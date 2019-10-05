@@ -5,6 +5,7 @@ and tt = (* K正規化後の式 (caml2html: knormal_t) *)
   | Unit
   | Int of int
   | Float of float
+  | Xor of Id.t * Id.t
   | Neg of Id.t
   | Add of Id.t * Id.t
   | Sub of Id.t * Id.t
@@ -13,6 +14,17 @@ and tt = (* K正規化後の式 (caml2html: knormal_t) *)
   | FSub of Id.t * Id.t
   | FMul of Id.t * Id.t
   | FDiv of Id.t * Id.t
+  | AndI of Id.t * int
+  | FAbs of Id.t
+  | FFloor of Id.t
+  | ItoF of Id.t
+  | FtoI of Id.t
+  | FSqrt of Id.t
+  | FEq of Id.t * Id.t
+  | FLE of Id.t * Id.t
+  | Read
+  | FRead
+  | Write of Id.t
   | IfEq of Id.t * Id.t * t * t (* 比較 + 分岐 (caml2html: knormal_branch) *)
   | IfLE of Id.t * Id.t * t * t (* 比較 + 分岐 *)
   | Let of (Id.t * Type.t) * t * t
@@ -30,9 +42,9 @@ and fundef = { name : Id.t * Type.t; args : (Id.t * Type.t) list; body : t }
 let rec fv e =
   let (pos, ebody) = e in
   match ebody with (* 式に出現する（自由な）変数 (caml2html: knormal_fv) *)
-  | Unit | Int(_) | Float(_) | ExtArray(_) -> S.empty
-  | Neg(x) | FNeg(x) -> S.singleton x
-  | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) -> S.of_list [x; y]
+  | Unit | Int(_) | Float(_) | ExtArray(_) | Read | FRead-> S.empty
+  | Neg(x) | FNeg(x) | AndI(x,_) | FAbs(x) | FFloor(x)| ItoF(x) | FtoI(x) | FSqrt(x) | Write(x)-> S.singleton x
+  | Xor(x, y) | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) | FEq(x, y) | FLE(x, y)-> S.of_list [x; y]
   | IfEq(x, y, e1, e2) | IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
   | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
   | Var(x) -> S.singleton x

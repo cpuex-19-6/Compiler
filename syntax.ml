@@ -18,7 +18,6 @@ and tt = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | LE of t * t
   | FEq of t * t
   | FLE of t * t
-  | FSqr of t
   | FAbs of t
   | FFloor of t
   | ItoF of t

@@ -195,7 +195,7 @@ exp: /* (* ∞Ï»Ã§Œº∞ (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FMul($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.5))) }
 | FSQR simple_exp
    %prec prec_app
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FSqr($2) }
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FMul($2,$2) }
 | FABS simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FAbs($2) }
 | FLOOR simple_exp
