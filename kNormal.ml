@@ -71,6 +71,7 @@ let rec g env (pos, ebody) =
   | Syntax.Int(i) -> (pos, Int(i)), Type.Int
   | Syntax.Float(d) -> (pos, Float(d)), Type.Float
   | Syntax.Not(e) -> g env (pos, Syntax.If(e, (pos, Syntax.Bool(false)), (pos, Syntax.Bool(true))))
+  | Syntax.Xor(e1,e2) -> g env (pos,Syntax.Xor(e1,e2))
   | Syntax.Neg(e) ->
       insert_let (g env e)
         (fun x -> (pos, Neg(x)), Type.Int)
@@ -101,7 +102,31 @@ let rec g env (pos, ebody) =
       insert_let (g env e1)
         (fun x -> insert_let (g env e2)
             (fun y -> (pos, FDiv(x, y)), Type.Float))
+  | Syntax.FAbs(e1) ->
+      insert_let (g env e1)
+      (fun x -> (pos,FAbs(x)), Type.Float)
+  | Syntax.FFloor(e1) ->
+      insert_let (g env e1)
+      (fun x -> (pos,FFloor(x)), Type.Float)
+  | Syntax.ItoF(e) ->
+      insert_let (g env e)
+      (fun x -> (pos,ItoF(x)), Type.Float)
+  | Syntax.FtoI(e) ->
+      insert_let (g env e)
+      (fun x -> (pos,FtoI(x)), Type.Float)
+  | Syntax.FSqrt(e) ->
+      insert_let (g env e)
+      (fun x -> (pos,FSqrt(x)), Type.Float)
+  | Syntax.Read -> 
+      ((pos,Read),Type.Int)
+  | Syntax.FRead -> 
+      ((pos,FRead), Type.Float)
+  | Syntax.Write(e) ->
+      insert_let (g env e)
+      (fun x -> (pos,Write(x)), Type.Unit)    
   | Syntax.Eq _ | Syntax.LE _ as cmp ->
+      g env (pos, Syntax.If((pos, cmp), (pos, Syntax.Bool(true)), (pos, Syntax.Bool(false))))
+  | Syntax.FEq _ | Syntax.FLE _ as cmp ->
       g env (pos, Syntax.If((pos, cmp), (pos, Syntax.Bool(true)), (pos, Syntax.Bool(false))))
   | Syntax.If((_, Syntax.Not(e1)), e2, e3) -> g env (pos, Syntax.If(e1, e3, e2)) (* notによる分岐を変換 (caml2html: knormal_not) *)
   | Syntax.If((_, Syntax.Eq(e1, e2)), e3, e4) ->
