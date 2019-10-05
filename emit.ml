@@ -44,7 +44,7 @@ let num_genid2 = ref 0
 let load_label pos r label =
   let r' = reg r in
   Printf.sprintf
-    "%d\tlui\t%s, %d\t\t! %d\n\n%d\taddi\t%s, %s, %d\t\t! %d\n\n"
+    "%d\tlui\t%s, %d\t\t! %d\n%d\taddi\t%s, %s, %d\t\t! %d\n"
    (pcincr()) r' (upper(Hashtbl.find address_list label)) pos (pcincr()) r' r' (lower(Hashtbl.find address_list label)) pos
 
 
@@ -79,7 +79,7 @@ and g' oc pos e =
       let u = upper n in
       let l = lower n in
       if u = 0 then
-        Printf.fprintf oc "%d \taddi\t%s, x0, %d\t\t! %d\n\n" (pcincr()) (reg x) l pos
+        Printf.fprintf oc "%d \taddi\t%s, x0, %d\t\t! %d\n" (pcincr()) (reg x) l pos
       else
         (Printf.fprintf oc "%d \tlui\t%s, %d\t\t! %d\n" (pcincr()) (reg x) u pos;
         if l <> 0 then
