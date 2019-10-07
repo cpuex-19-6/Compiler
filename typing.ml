@@ -26,6 +26,18 @@ let rec deref_term (pos, ebody) =
   match ebody with
   | Not(e) -> pos, Not(deref_term e)
   | Neg(e) -> pos, Neg(deref_term e)
+  | And(e1,e2) -> pos, And(deref_term e1, deref_term e2)
+  | Or(e1,e2) -> pos, Or(deref_term e1, deref_term e2)
+  | AndI(e1,e2) -> pos, AndI(deref_term e1, e2)
+  | FAbs(e) -> pos, FAbs(deref_term e)
+  | ItoF(e) -> pos,  ItoF(deref_term e)
+  | FtoI(e) -> pos, FtoI(deref_term e)
+  | FSqrt(e) -> pos, FSqrt(deref_term e)
+  | FEq(e1,e2) -> pos, FEq(deref_term e1, deref_term e2)
+  | FLE(e1,e2) -> pos, FLE(deref_term e1, deref_term e2)
+  | Read -> pos, Read
+  | FRead -> pos, FRead
+  | Write(e) -> pos, Write(deref_term e) 
   | Add(e1, e2) -> pos, Add(deref_term e1, deref_term e2)
   | Sub(e1, e2) -> pos, Sub(deref_term e1, deref_term e2)
   | Eq(e1, e2) -> pos, Eq(deref_term e1, deref_term e2)
@@ -91,6 +103,37 @@ let rec g env e = (* 型推論ルーチン (caml2html: typing_g) *)
     | Not(_, e) ->
         unify Type.Bool (g env e);
         Type.Bool
+    | And((_,e1),(_,e2)) -> 
+        unify Type.Bool (g env e1);
+        unify Type.Bool (g env e2);
+        Type.Bool
+    | Or((_,e1),(_,e2)) -> 
+        unify Type.Bool (g env e1);
+        unify Type.Bool (g env e2);
+        Type.Bool
+    | FAbs((_,e)) ->
+        unify Type.Float (g env e);
+        Type.Float
+    | ItoF((_,e)) -> 
+        unify Type.Int (g env e);
+        Type.Float
+    | FtoI((_,e)) -> 
+        unify Type.Float (g env e);
+        Type.Int
+    | FSqrt((_,e)) -> 
+        unify Type.Float (g env e);
+        Type.Float
+    | FEq((_,e1),(_,e2)) -> 
+        unify Type.Float (g env e1);
+        unify Type.Float (g env e2);
+        Type.Float
+    | FLE((_,e1),(_,e2)) -> 
+        unify Type.Float (g env e1);
+        unify Type.Float (g env e2);
+        Type.Float
+    | Read -> Type.Unit
+    | FRead -> Type.Unit
+    | Write((_,e)) -> Type.Unit
     | Neg(_, e) ->
         unify Type.Int (g env e);
         Type.Int

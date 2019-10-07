@@ -5,7 +5,8 @@ and tt = (* K正規化後の式 (caml2html: knormal_t) *)
   | Unit
   | Int of int
   | Float of float
-  | Xor of Id.t * Id.t
+  | And of Id.t * Id.t
+  | Or of Id.t * Id.t
   | Neg of Id.t
   | Add of Id.t * Id.t
   | Sub of Id.t * Id.t
@@ -16,7 +17,6 @@ and tt = (* K正規化後の式 (caml2html: knormal_t) *)
   | FDiv of Id.t * Id.t
   | AndI of Id.t * int
   | FAbs of Id.t
-  | FFloor of Id.t
   | ItoF of Id.t
   | FtoI of Id.t
   | FSqrt of Id.t
@@ -43,8 +43,8 @@ let rec fv e =
   let (pos, ebody) = e in
   match ebody with (* 式に出現する（自由な）変数 (caml2html: knormal_fv) *)
   | Unit | Int(_) | Float(_) | ExtArray(_) | Read | FRead-> S.empty
-  | Neg(x) | FNeg(x) | AndI(x,_) | FAbs(x) | FFloor(x)| ItoF(x) | FtoI(x) | FSqrt(x) | Write(x)-> S.singleton x
-  | Xor(x, y) | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) | FEq(x, y) | FLE(x, y)-> S.of_list [x; y]
+  | Neg(x) | FNeg(x) | AndI(x,_) | FAbs(x) | ItoF(x) | FtoI(x) | FSqrt(x) | Write(x)-> S.singleton x
+  | And(x, y) | Or(x,y) | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) | FEq(x, y) | FLE(x, y)-> S.of_list [x; y]
   | IfEq(x, y, e1, e2) | IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
   | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
   | Var(x) -> S.singleton x
@@ -71,7 +71,8 @@ let rec g env (pos, ebody) =
   | Syntax.Int(i) -> (pos, Int(i)), Type.Int
   | Syntax.Float(d) -> (pos, Float(d)), Type.Float
   | Syntax.Not(e) -> g env (pos, Syntax.If(e, (pos, Syntax.Bool(false)), (pos, Syntax.Bool(true))))
-  | Syntax.Xor(e1,e2) -> g env (pos,Syntax.Xor(e1,e2))
+  | Syntax.And(e1,e2) -> g env (pos,Syntax.And(e1,e2))
+  | Syntax.Or(e1,e2) -> g env (pos,Syntax.Or(e1,e2))
   | Syntax.Neg(e) ->
       insert_let (g env e)
         (fun x -> (pos, Neg(x)), Type.Int)
@@ -105,9 +106,6 @@ let rec g env (pos, ebody) =
   | Syntax.FAbs(e1) ->
       insert_let (g env e1)
       (fun x -> (pos,FAbs(x)), Type.Float)
-  | Syntax.FFloor(e1) ->
-      insert_let (g env e1)
-      (fun x -> (pos,FFloor(x)), Type.Float)
   | Syntax.ItoF(e) ->
       insert_let (g env e)
       (fun x -> (pos,ItoF(x)), Type.Float)

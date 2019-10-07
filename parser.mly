@@ -55,6 +55,8 @@ let atan e =
   letfloat "t5" ((var "t4" *! var "t1" *! (float 41. /! float 30.))) @@
   float 1.10714872 +! var "t1" -! var "t2" +! var "t3" -! var "t4" +! var "t5"
 
+let xor x y = 
+Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %}
 
 
@@ -175,7 +177,7 @@ exp: /* (* ∞Ï»Ã§Œº∞ (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FDiv($1, $3) }
 | XOR simple_exp simple_exp
    %prec prec_app
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Xor($2,$3) }
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, xor $2 $3 }
 | FISZERO simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FEq($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.))) }

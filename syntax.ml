@@ -6,6 +6,8 @@ and tt = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | Float of float
   | Not of t
   | Xor of t * t
+  | And of t * t
+  | Or of t * t
   | Neg of t
   | Add of t * t
   | Sub of t * t
