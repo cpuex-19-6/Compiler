@@ -4,6 +4,18 @@ and tt =
   | Unit
   | Int of int
   | Float of float
+  | And of Id.t * Id.t
+  | Or of Id.t * Id.t
+  | AndI of Id.t * int
+  | FAbs of Id.t 
+  | ItoF of Id.t
+  | FtoI of Id.t
+  | FSqrt of Id.t
+  | FEq of Id.t * Id.t
+  | FLT of Id.t * Id.t
+  | Read 
+  | FRead 
+  | Write of Id.t
   | Neg of Id.t
   | Add of Id.t * Id.t
   | Sub of Id.t * Id.t

@@ -21,8 +21,8 @@ let lexbuf outchan binchan l = (* バッファをコンパイルしてチャンネルへ出力する (
                         (Typing.f
                           (Parser.exp Lexer.token l)))))))))
   in 
-    Emit.f outchan prog;
-    EmitBinary.f binchan prog
+    Emit.f outchan prog(*;
+    EmitBinary.f binchan prog*)
 
 let string s = lexbuf stdout stdout (Lexing.from_string s) (* 文字列をコンパイルして標準出力に表示する (caml2html: main_string) *)
 

@@ -34,7 +34,7 @@ let rec deref_term (pos, ebody) =
   | FtoI(e) -> pos, FtoI(deref_term e)
   | FSqrt(e) -> pos, FSqrt(deref_term e)
   | FEq(e1,e2) -> pos, FEq(deref_term e1, deref_term e2)
-  | FLE(e1,e2) -> pos, FLE(deref_term e1, deref_term e2)
+  | FLT(e1,e2) -> pos, FLT(deref_term e1, deref_term e2)
   | Read -> pos, Read
   | FRead -> pos, FRead
   | Write(e) -> pos, Write(deref_term e) 
@@ -111,6 +111,9 @@ let rec g env e = (* 型推論ルーチン (caml2html: typing_g) *)
         unify Type.Bool (g env e1);
         unify Type.Bool (g env e2);
         Type.Bool
+    | AndI((_,e1),e2) -> 
+        unify Type.Int (g env e1);
+        Type.Int
     | FAbs((_,e)) ->
         unify Type.Float (g env e);
         Type.Float
@@ -127,7 +130,7 @@ let rec g env e = (* 型推論ルーチン (caml2html: typing_g) *)
         unify Type.Float (g env e1);
         unify Type.Float (g env e2);
         Type.Float
-    | FLE((_,e1),(_,e2)) -> 
+    | FLT((_,e1),(_,e2)) -> 
         unify Type.Float (g env e1);
         unify Type.Float (g env e2);
         Type.Float

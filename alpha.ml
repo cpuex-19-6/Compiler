@@ -23,7 +23,7 @@ let rec g env (pos, ebody) = (* α変換ルーチン本体 (caml2html: alpha_g) *)
   | FtoI(x) -> FtoI(find x env)
   | FSqrt(x) -> FSqrt(find x env)
   | FEq(x,y) -> FEq(find x env, find y env)
-  | FLE(x,y) -> FLE(find x env, find y env)
+  | FLT(x,y) -> FLT(find x env, find y env)
   | Read -> Read
   | FRead -> FRead
   | Write(x) -> Write(find x env)

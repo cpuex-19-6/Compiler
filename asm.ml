@@ -9,6 +9,18 @@ and exp = (* 一つ一つの命令に対応する式 (caml2html: sparcasm_exp) *)
   | Li of int
   | FLi of Id.l
   | SetL of Id.l
+  | And of Id.t * Id.t
+  | Or of Id.t * Id.t
+  | AndI of Id.t * int
+  | FAbs of Id.t 
+  | ItoF of Id.t
+  | FtoI of Id.t
+  | FSqrt of Id.t
+  | FEq of Id.t * Id.t
+  | FLT of Id.t * Id.t
+  | Read 
+  | FRead 
+  | Write of Id.t
   | Mr of Id.t
   | Neg of Id.t
   | Add of Id.t * id_or_imm

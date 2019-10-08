@@ -19,7 +19,7 @@ and tt =
   | FtoI of Id.t
   | FSqrt of Id.t
   | FEq of Id.t * Id.t
-  | FLE of Id.t * Id.t
+  | FLT of Id.t * Id.t
   | Read
   | FRead
   | Write of Id.t

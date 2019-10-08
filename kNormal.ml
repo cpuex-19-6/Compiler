@@ -21,7 +21,7 @@ and tt = (* K正規化後の式 (caml2html: knormal_t) *)
   | FtoI of Id.t
   | FSqrt of Id.t
   | FEq of Id.t * Id.t
-  | FLE of Id.t * Id.t
+  | FLT of Id.t * Id.t
   | Read
   | FRead
   | Write of Id.t
@@ -44,7 +44,7 @@ let rec fv e =
   match ebody with (* 式に出現する（自由な）変数 (caml2html: knormal_fv) *)
   | Unit | Int(_) | Float(_) | ExtArray(_) | Read | FRead-> S.empty
   | Neg(x) | FNeg(x) | AndI(x,_) | FAbs(x) | ItoF(x) | FtoI(x) | FSqrt(x) | Write(x)-> S.singleton x
-  | And(x, y) | Or(x,y) | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) | FEq(x, y) | FLE(x, y)-> S.of_list [x; y]
+  | And(x, y) | Or(x,y) | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) | FEq(x, y) | FLT(x, y)-> S.of_list [x; y]
   | IfEq(x, y, e1, e2) | IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
   | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
   | Var(x) -> S.singleton x
@@ -73,6 +73,7 @@ let rec g env (pos, ebody) =
   | Syntax.Not(e) -> g env (pos, Syntax.If(e, (pos, Syntax.Bool(false)), (pos, Syntax.Bool(true))))
   | Syntax.And(e1,e2) -> g env (pos,Syntax.And(e1,e2))
   | Syntax.Or(e1,e2) -> g env (pos,Syntax.Or(e1,e2))
+  | Syntax.AndI(e1,e2) -> g env (pos, Syntax.AndI(e1,e2))
   | Syntax.Neg(e) ->
       insert_let (g env e)
         (fun x -> (pos, Neg(x)), Type.Int)
@@ -106,7 +107,7 @@ let rec g env (pos, ebody) =
   | Syntax.FAbs(e1) ->
       insert_let (g env e1)
       (fun x -> (pos,FAbs(x)), Type.Float)
-  | Syntax.ItoF(e) ->
+  | Syntax.ItoF(e) -> 
       insert_let (g env e)
       (fun x -> (pos,ItoF(x)), Type.Float)
   | Syntax.FtoI(e) ->
@@ -124,7 +125,7 @@ let rec g env (pos, ebody) =
       (fun x -> (pos,Write(x)), Type.Unit)    
   | Syntax.Eq _ | Syntax.LE _ as cmp ->
       g env (pos, Syntax.If((pos, cmp), (pos, Syntax.Bool(true)), (pos, Syntax.Bool(false))))
-  | Syntax.FEq _ | Syntax.FLE _ as cmp ->
+  | Syntax.FEq _ | Syntax.FLT _ as cmp ->
       g env (pos, Syntax.If((pos, cmp), (pos, Syntax.Bool(true)), (pos, Syntax.Bool(false))))
   | Syntax.If((_, Syntax.Not(e1)), e2, e3) -> g env (pos, Syntax.If(e1, e3, e2)) (* notによる分岐を変換 (caml2html: knormal_not) *)
   | Syntax.If((_, Syntax.Eq(e1, e2)), e3, e4) ->

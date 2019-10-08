@@ -5,7 +5,6 @@ and tt = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | Int of int
   | Float of float
   | Not of t
-  | Xor of t * t
   | And of t * t
   | Or of t * t
   | Neg of t
@@ -19,7 +18,7 @@ and tt = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | Eq of t * t
   | LE of t * t
   | FEq of t * t
-  | FLE of t * t
+  | FLT of t * t
   | FAbs of t
   | FFloor of t
   | ItoF of t

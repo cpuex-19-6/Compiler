@@ -4,6 +4,18 @@ and tt = (* クロージャ変換後の式 (caml2html: closure_t) *)
   | Unit
   | Int of int
   | Float of float
+  | And of Id.t * Id.t
+  | Or of Id.t * Id.t
+  | AndI of Id.t * int
+  | FAbs of Id.t 
+  | ItoF of Id.t
+  | FtoI of Id.t
+  | FSqrt of Id.t
+  | FEq of Id.t * Id.t
+  | FLT of Id.t * Id.t
+  | Read 
+  | FRead 
+  | Write of Id.t
   | Neg of Id.t
   | Add of Id.t * Id.t
   | Sub of Id.t * Id.t
@@ -32,9 +44,9 @@ type prog = Prog of fundef list * t
 
 let rec fv (_, ebody) =
   match ebody with
-  | Unit | Int(_) | Float(_) | ExtArray(_) -> S.empty
-  | Neg(x) | FNeg(x) -> S.singleton x
-  | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) -> S.of_list [x; y]
+  | Unit | Int(_) | Float(_) | ExtArray(_) | Read | FRead -> S.empty
+  | Neg(x) | FNeg(x) | AndI(x,_) | ItoF(x) | FtoI(x) | FAbs(x) | FSqrt(x) | Write(x) -> S.singleton x
+  | And(x, y) | Or(x, y) | FEq(x, y) | FLT(x, y) | Add(x, y) | Sub(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) -> S.of_list [x; y]
   | IfEq(x, y, e1, e2)| IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
   | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
   | Var(x) -> S.singleton x
@@ -52,6 +64,18 @@ let rec g env known (pos, ebody) =
   | KNormal.Int(i) -> Int(i)
   | KNormal.Float(d) -> Float(d)
   | KNormal.Neg(x) -> Neg(x)
+  | KNormal.And(x, y) -> And(x, y)
+  | KNormal.Or(x, y) -> Or(x, y)
+  | KNormal.AndI(x, y) -> AndI(x, y)
+  | KNormal.FAbs(x) -> FAbs(x)
+  | KNormal.ItoF(x) -> print_int 1111;ItoF(x)
+  | KNormal.FtoI(x) -> FtoI(x)
+  | KNormal.FSqrt(x) -> FSqrt(x)
+  | KNormal.FEq(x, y) -> FEq(x, y)
+  | KNormal.FLT(x, y) -> FLT(x, y)
+  | KNormal.Read -> Read
+  | KNormal.FRead -> FRead
+  | KNormal.Write(x) -> Write(x)
   | KNormal.Add(x, y) -> Add(x, y)
   | KNormal.Sub(x, y) -> Sub(x, y)
   | KNormal.FNeg(x) -> FNeg(x)

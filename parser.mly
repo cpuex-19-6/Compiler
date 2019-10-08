@@ -140,40 +140,40 @@ exp: /* (* 一般の式 (caml2html: parser_exp) *) */
 | NOT simple_exp
     %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Not($2) }
-| MINUS simple_exp
+| MINUS exp
     %prec prec_unary_minus
     { let (ln, e) = $2 in match e with
     | Float(f) -> ln, Float(-.f) (* -1.23などは型エラーではないので別扱い *)
     | e -> ln, Neg($2) }
-| simple_exp PLUS simple_exp /* (* 足し算を構文解析するルール (caml2html: parser_add) *) */
+| exp PLUS exp /* (* 足し算を構文解析するルール (caml2html: parser_add) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Add($1, $3) }
-| simple_exp MINUS simple_exp
+| exp MINUS exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Sub($1, $3) }
-| simple_exp EQUAL simple_exp
+| exp EQUAL exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Eq($1, $3) }
-| simple_exp LESS_GREATER simple_exp
+| exp LESS_GREATER exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Not(let start = Parsing.symbol_start_pos () in start.pos_lnum, Eq($1, $3)) }
-| simple_exp LESS simple_exp
+| exp LESS exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Not(let start = Parsing.symbol_start_pos () in start.pos_lnum, LE($3, $1)) }
-| simple_exp GREATER simple_exp
+| exp GREATER exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Not(let start = Parsing.symbol_start_pos () in start.pos_lnum, LE($1, $3)) }
-| simple_exp LESS_EQUAL simple_exp
+| exp LESS_EQUAL exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, LE($1, $3) }
-| simple_exp GREATER_EQUAL simple_exp
+| exp GREATER_EQUAL exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, LE($3, $1) }
 | IF exp THEN exp ELSE exp
     %prec prec_if
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, If($2, $4, $6) }
-| MINUS_DOT simple_exp
+| MINUS_DOT exp
     %prec prec_unary_minus
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FNeg($2) }
-| simple_exp PLUS_DOT simple_exp
+| exp PLUS_DOT exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FAdd($1, $3) }
-| simple_exp MINUS_DOT simple_exp
+| exp MINUS_DOT exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FSub($1, $3) }
-| simple_exp AST_DOT simple_exp
+| exp AST_DOT exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FMul($1, $3) }
-| simple_exp SLASH_DOT simple_exp
+| exp SLASH_DOT exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FDiv($1, $3) }
 | XOR simple_exp simple_exp
    %prec prec_app
@@ -183,13 +183,13 @@ exp: /* (* 一般の式 (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FEq($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.))) }
 | FLESS simple_exp simple_exp
    %prec prec_app
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLE($2, $3) }
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLT($2, $3) }
 | FISPOS simple_exp
    %prec prec_app
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLE((let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.)), $2) }
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLT((let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.)), $2) }
 | FISNEG simple_exp
    %prec prec_app
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLE($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.))) }
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLT($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.))) }
 | FNEG simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FNeg($2) }
