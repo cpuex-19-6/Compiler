@@ -1,1 +1,1 @@
-let rec f n = float_of_int n in let _ = f 13 in ()
+let rec f n = int_of_float n in let _ = f 3.0 in ()

@@ -125,8 +125,16 @@ let rec g env (pos, ebody) =
       (fun x -> (pos,Write(x)), Type.Unit)    
   | Syntax.Eq _ | Syntax.LE _ as cmp ->
       g env (pos, Syntax.If((pos, cmp), (pos, Syntax.Bool(true)), (pos, Syntax.Bool(false))))
-  | Syntax.FEq _ | Syntax.FLT _ as cmp ->
-      g env (pos, Syntax.If((pos, cmp), (pos, Syntax.Bool(true)), (pos, Syntax.Bool(false))))
+  (*| Syntax.FEq _ | Syntax.FLT _ as cmp ->
+      g env (pos, Syntax.If((pos, cmp), (pos, Syntax.Bool(true)), (pos, Syntax.Bool(false))))*)
+  | Syntax.FEq(e1, e2) ->
+      insert_let (g env e1)
+         (fun x -> insert_let (g env e2)
+            (fun y -> (pos, FEq(x, y)), Type.Bool))
+  | Syntax.FLT(e1, e2) -> 
+       insert_let (g env e1)
+          (fun x -> insert_let (g env e2)
+            (fun y -> (pos, FLT(x, y)), Type.Bool))
   | Syntax.If((_, Syntax.Not(e1)), e2, e3) -> g env (pos, Syntax.If(e1, e3, e2)) (* notによる分岐を変換 (caml2html: knormal_not) *)
   | Syntax.If((_, Syntax.Eq(e1, e2)), e3, e4) ->
       insert_let (g env e1)

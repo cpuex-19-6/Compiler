@@ -68,7 +68,7 @@ let rec g env known (pos, ebody) =
   | KNormal.Or(x, y) -> Or(x, y)
   | KNormal.AndI(x, y) -> AndI(x, y)
   | KNormal.FAbs(x) -> FAbs(x)
-  | KNormal.ItoF(x) -> print_int 1111;ItoF(x)
+  | KNormal.ItoF(x) -> ItoF(x)
   | KNormal.FtoI(x) -> FtoI(x)
   | KNormal.FSqrt(x) -> FSqrt(x)
   | KNormal.FEq(x, y) -> FEq(x, y)

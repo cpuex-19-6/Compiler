@@ -102,9 +102,9 @@ and g' oc pos e =
         (Printf.fprintf oc "%d \tlui\t%s, %d\t\t! %d\n" (pcincr()) (reg x) u pos;
         if l <> 0 then
           Printf.fprintf oc "%d \taddi\t%s, %s, %d\t\t! %d\n"(pcincr()) (reg x) (reg x) l pos)
-  | NonTail(x), FLi(Id.L(l)) ->
-      let s = load_label pos (reg reg_tmp) l in
-      Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\t\t! %d\n"(pcincr()) s (reg x) (reg reg_tmp) pos;
+  | NonTail(x), FLi(d) ->
+      (*let s = load_label pos (reg reg_tmp) l in
+      Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\t\t! %d\n"(pcincr()) s (reg x) (reg reg_tmp) pos;*)()
   | NonTail(x), SetL(Id.L(y)) ->
       let s = load_label pos x y in
       Printf.fprintf oc "%s" s
@@ -304,7 +304,7 @@ and g'_args oc pos x_reg_cl ys zs =
           (jpincr();
           if l <> 0 then
             jpincr())
-    | NonTail(x), FLi(Id.L(l)) ->
+    | NonTail(x), FLi(d) ->
         (*let _ = load_label (reg reg_tmp) l in*)
         jpincr()
     | NonTail(x), SetL(Id.L(y)) ->

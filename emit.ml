@@ -3,6 +3,8 @@ open Id
 
 external gethi : float -> int32 = "gethi"
 external getlo : float -> int32 = "getlo"
+external get_upper : float -> int32 = "get_upper"
+external get_lower : float -> int32 = "get_lower"
 
 let stackset = ref S.empty (* すでにSaveされた変数の集合 (caml2html: emit_stackset) *)
 let stackmap = ref [] (* Saveされた変数の、スタックにおける位置 (caml2html: emit_stackmap) *)
@@ -43,9 +45,10 @@ let num_genid2 = ref 0
 
 let load_label pos r label =
   let r' = reg r in
-  Printf.sprintf
+  try(Printf.sprintf
     "%d\tlui\t%s, %d\t\t! %d\n%d\taddi\t%s, %s, %d\t\t! %d\n"
-   (pcincr()) r' (upper(Hashtbl.find address_list label)) pos (pcincr()) r' r' (lower(Hashtbl.find address_list label)) pos
+   (pcincr()) r' (upper(Hashtbl.find address_list label)) pos (pcincr()) r' r' (lower(Hashtbl.find address_list label)) pos)
+   with Not_found -> Printf.sprintf "Label "^label^" not found\n"
 
 
 (* 関数呼び出しのために引数を並べ替える(register shuffling) (caml2html: emit_shuffle) *)
@@ -84,12 +87,20 @@ and g' oc pos e =
         (Printf.fprintf oc "%d \tlui\t%s, %d\t\t! %d\n" (pcincr()) (reg x) u pos;
         if l <> 0 then
           Printf.fprintf oc "%d \taddi\t%s, %s, %d\t\t! %d\n"(pcincr()) (reg x) (reg x) l pos)
-  | NonTail(x), FLi(Id.L(l)) ->
-      let s = load_label pos (reg reg_tmp) l in
-      Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\t\t! %d\n"(pcincr()) s (reg x) (reg reg_tmp) pos;
+  | NonTail(x), FLi(d) ->
+      (*let s = load_label pos (reg reg_tmp) l in
+      Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\t\t! %d\n"(pcincr()) s (reg x) (reg reg_tmp) pos;*)
+      let u = Int32.to_int(get_upper d) in
+      let l = Int32.to_int(get_lower d) in
+      if u = 0 then 
+        Printf.fprintf oc "%d \taddi\t%s, x0, %d\t\t! %d\n" (pcincr()) (reg x) l pos
+      else
+         (Printf.fprintf oc "%d \tlui\t%s, %d\t\t! %d\n" (pcincr()) (reg x) u pos;
+         if l <> 0 then
+            Printf.fprintf oc "%d \taddi\t%s, %s, %d\t\t! %d\n"(pcincr()) (reg x) (reg x) l pos)
   | NonTail(x), SetL(Id.L(y)) ->
-      let s = load_label pos x y in
-      Printf.fprintf oc "%s" s
+      (*let s = load_label pos x y in
+      Printf.fprintf oc "%s" s*)()
   | NonTail(x), Mr(y) when x = y -> ()
   | NonTail(x), Mr(y) -> Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
   | NonTail(x), Neg(y) -> Printf.fprintf oc "%d\tsub\t%s, x0, %s\t\t! %d\n" (pcincr())(reg x) (reg y) pos
@@ -142,7 +153,7 @@ and g' oc pos e =
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
       g' oc pos (NonTail(Id.gentmp Type.Unit), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
-  | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Slw _ | Lwz _ | FtoI _  | And _ | Or _ | AndI _ as exp) ->
+  | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Slw _ | Lwz _ | FtoI _  | And _ | Or _ | AndI _ | FEq _ | FLT _ as exp) ->
       g' oc pos (NonTail(regs.(0)), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
   | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FAbs _ | FSqrt _ as exp) ->
@@ -295,7 +306,7 @@ and g'_args oc pos x_reg_cl ys zs =
           (jpincr();
           if l <> 0 then
             jpincr())
-    | NonTail(x), FLi(Id.L(l)) ->
+    | NonTail(x), FLi(d) ->
         (*let _ = load_label (reg reg_tmp) l in*)
         jpincr()
     | NonTail(x), SetL(Id.L(y)) ->
@@ -349,10 +360,10 @@ and g'_args oc pos x_reg_cl ys zs =
     | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
         k' oc (NonTail(Id.gentmp Type.Unit), exp);
         jpincr()
-    | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Slw _ | Lwz _ | FtoI _ as exp) ->
+    | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Slw _ | Lwz _ | FtoI _ | FEq _ | FLT _ as exp) ->
         k' oc (NonTail(regs.(0)), exp);
         jpincr()
-    | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FSqrt _ as exp) ->
+    | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FSqrt _  | FAbs _ as exp) ->
         k' oc (NonTail(fregs.(0)), exp);
         jpincr()
     | Tail, (Restore(x) as exp) ->

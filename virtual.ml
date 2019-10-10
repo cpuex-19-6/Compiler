@@ -36,7 +36,7 @@ let rec g env (pos, ebody) =
   | Closure.Unit -> Ans(pos, Nop)
   | Closure.Int(i) -> Ans(pos, Li(i))
   | Closure.Float(d) ->
-      let l =
+      (*let l =
         try
           (* すでに定数テーブルにあったら再利用 *)
           let (l, _) = List.find (fun (_, d') -> d = d') !data in
@@ -45,7 +45,7 @@ let rec g env (pos, ebody) =
           let l = Id.L(Id.genid "l") in
           data := (l, d) :: !data;
           l in
-      Ans(pos, FLi(l))
+      Ans(pos, FLi(l))*) Ans(pos, FLi(d))
   | Closure.Neg(x) -> Ans(pos, Neg(x))
   | Closure.And(x, y) -> Ans(pos, And(x, y))
   | Closure.Or(x, y) -> Ans(pos, Or(x, y))

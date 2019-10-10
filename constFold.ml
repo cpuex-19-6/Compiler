@@ -17,7 +17,7 @@ let findt x env = (match M.find x env with Tuple(ys) -> ys | _ -> raise Not_foun
 let rec g env (pos, ebody) = (* 定数畳み込みルーチン本体 (caml2html: constfold_g) *)
   match ebody with
   | Var(x) when memi x env -> pos, Int(findi x env)
-  (* | Var(x) when memf x env -> Float(findf x env) *)
+  (* | Var(x) when memf x env -> pos, Float(findf x env) *)
   (* | Var(x) when memt x env -> Tuple(findt x env) *)
   | Neg(x) when memi x env -> pos, Int(-(findi x env))
   | Add(x, y) when memi x env && memi y env -> pos, Int(findi x env + findi y env) (* 足し算のケース (caml2html: constfold_add) *)

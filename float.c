@@ -8,6 +8,11 @@ typedef union {
   double d;
 } dbl;
 
+typedef union {
+  int32_t i;
+  float d;
+} dbl2;
+
 value gethi(value v) {
   dbl d;
   d.d = Double_val(v);
@@ -18,4 +23,16 @@ value getlo(value v) {
   dbl d;
   d.d = Double_val(v);
   return copy_int32(d.i[1]);
+}
+
+value get_upper(value v){
+  dbl2 d;
+  d.d = Double_val(v);
+  return copy_int32((d.i >> 12) + ((d.i & 0x300) >> 11));
+}
+
+value get_lower(value v){
+  dbl2 d;
+  d.d = Double_val(v);
+  return copy_int32((d.i << 20) >> 20);
 }
