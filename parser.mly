@@ -6,6 +6,8 @@ let addtyp x = (x, Type.gentyp ())
 let start_pos = Parsing.symbol_start_pos ()
 let letfloat x e1 e2 = 0,Let((x, Type.Int), e1, e2)
 let letint x e1 e2 = 0,Let((x, Type.Int), e1,e2)
+let letrec ident formal_args body e = 
+0, LetRec({name = addtyp ident; args = List.map addtyp formal_args; body = body},e)
 let (&!) e n = 0,AndI(e,n)
 let var x = 0,Var x
 let int n = 0,Int n
@@ -19,6 +21,10 @@ let (/!) e1 e2 = 0,FDiv(e1,e2)
 
 let start = Parsing.symbol_start_pos ()
 
+let pi = float 3.1415927
+let pi' = 3.1415927
+
+   
 let cos e =
   letfloat "x" e @@
   letfloat "xx" (var "x" *! var "x") @@
@@ -28,8 +34,6 @@ let cos e =
   letfloat "t8" (var "t6" *! var "xx" /! float 56.) @@
   letfloat "t10" (var "t8" *! var "xx" /! float 90.) @@
   float 1. -! var "t2" +! var "t4" -! var "t6" +! var "t8" -! var "t10"
-
-let pi = float 3.1415927
 
 let sin e =
   letfloat "x" e @@
@@ -92,6 +96,8 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %token LPAREN
 %token RPAREN
 %token EOF
+%token AND 
+%token OR
 %token XOR
 %token FISZERO FLESS FISPOS FISNEG
 %token FNEG FABS FHALF FSQR FLOOR FLOATOFINT INTOFFLOAT SQRT COS SIN TAN ATAN
@@ -175,6 +181,10 @@ exp: /* (* ∞Ï»Ã§Œº∞ (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FMul($1, $3) }
 | exp SLASH_DOT exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FDiv($1, $3) }
+| exp AND exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, And($1, $3) }
+| exp OR exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Or($1, $3) }
 | XOR simple_exp simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, xor $2 $3 }

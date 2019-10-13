@@ -129,11 +129,11 @@ let rec g env e = (* 型推論ルーチン (caml2html: typing_g) *)
     | FEq((_,e1),(_,e2)) -> 
         unify Type.Float (g env e1);
         unify Type.Float (g env e2);
-        Type.Float
+        Type.Bool
     | FLT((_,e1),(_,e2)) -> 
         unify Type.Float (g env e1);
         unify Type.Float (g env e2);
-        Type.Float
+        Type.Bool
     | Read -> Type.Unit
     | FRead -> Type.Unit
     | Write((_,e)) -> Type.Unit

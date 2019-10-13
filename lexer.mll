@@ -58,6 +58,10 @@ rule token = parse
     { GREATER }
 | "xor"
     { XOR }
+| "&&"
+    { AND }
+| "||"
+    { OR }
 | "fiszero"
     { FISZERO }
 | "fless"
