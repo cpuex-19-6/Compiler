@@ -71,16 +71,24 @@ let rec g env (pos, ebody) =
   | Syntax.Int(i) -> (pos, Int(i)), Type.Int
   | Syntax.Float(d) -> (pos, Float(d)), Type.Float
   | Syntax.Not(e) -> g env (pos, Syntax.If(e, (pos, Syntax.Bool(false)), (pos, Syntax.Bool(true))))
-  | Syntax.And(e1,e2) -> g env (pos,Syntax.And(e1,e2))
-  | Syntax.Or(e1,e2) -> g env (pos,Syntax.Or(e1,e2))
-  | Syntax.AndI(e1,e2) -> g env (pos, Syntax.AndI(e1,e2))
+  | Syntax.And(e1,e2) ->  
+     insert_let (g env e1)
+      (fun x -> insert_let (g env e2)
+         (fun y -> (pos, And(x, y)), Type.Bool))
+  | Syntax.Or(e1,e2) -> 
+     insert_let (g env e1)
+       (fun x -> insert_let (g env e2)
+         (fun y -> (pos, Or(x, y)), Type.Bool))
+  | Syntax.AndI(e1,e2) -> 
+     insert_let (g env e1)
+        (fun x -> (pos, AndI(x ,e2)), Type.Int)
   | Syntax.Neg(e) ->
       insert_let (g env e)
         (fun x -> (pos, Neg(x)), Type.Int)
   | Syntax.Add(e1, e2) -> (* 足し算のK正規化 (caml2html: knormal_add) *)
       insert_let (g env e1)
         (fun x -> insert_let (g env e2)
-            (fun y -> (pos, Add(x, y)), Type.Int))
+           (fun y -> (pos, Add(x, y)), Type.Int))
   | Syntax.Sub(e1, e2) ->
       insert_let (g env e1)
         (fun x -> insert_let (g env e2)
@@ -222,6 +230,6 @@ let rec g env (pos, ebody) =
       insert_let (g env e1)
         (fun x -> insert_let (g env e2)
             (fun y -> insert_let (g env e3)
-                (fun z -> (pos, Put(x, y, z)), Type.Unit)))
+                (fun z -> (pos, Put(x, y, z)), Type.Unit)))   
 
 let f (pos, e) = fst (g M.empty (pos, e))

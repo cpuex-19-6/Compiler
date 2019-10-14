@@ -8,7 +8,9 @@ let rec g env (pos, ebody) = (* β簡約ルーチン本体 (caml2html: beta_g) *)
   | Int(i) -> pos, Int(i)
   | Float(d) -> pos, Float(d)
   | Neg(x) -> pos, Neg(find x env)
-  | AndI(x,y) -> pos, AndI(find x env,y)
+  | And(x, y) -> pos, And(find x env, find y env)
+  | Or(x, y) -> pos, Or(find x env, find y env)
+  | AndI(x, y) -> pos, AndI(find x env, y)
   | FAbs(x) -> pos, FAbs(find x env)
   | ItoF(x) -> pos, ItoF(find x env)
   | FtoI(x) -> pos, FtoI(find x env)
@@ -46,4 +48,4 @@ let rec g env (pos, ebody) = (* β簡約ルーチン本体 (caml2html: beta_g) *)
   | ExtArray(x) -> pos, ExtArray(x)
   | ExtFunApp(x, ys) -> pos, ExtFunApp(x, List.map (fun y -> find y env) ys)
 
-let f = g M.empty
+  let f = g M.empty
