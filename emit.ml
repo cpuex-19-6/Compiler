@@ -161,7 +161,7 @@ and g' oc pos e =
       Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg reg_sp) (offset y) pos
   | NonTail(x), Restore(y) ->
       assert (List.mem x allfregs);
-      Printf.fprintf oc "%d\tlfd\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg reg_sp) (offset y) pos
+      Printf.fprintf oc "%d\tflw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg reg_sp) (offset y) pos
   (* 末尾だったら計算結果を第一レジスタにセットしてリターン (caml2html: emit_tailret) *)
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ as exp) ->
       g' oc pos (NonTail(Id.gentmp Type.Unit), exp);
