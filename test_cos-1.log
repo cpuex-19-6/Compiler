@@ -1,0 +1,172 @@
+LET
+  VAR  c
+  LETREC
+    VAR  pi_div
+    VAR  e
+    VAR  x
+    IF
+      AND
+        NOT
+          FLT
+            VAR  e
+            FLOAT  0.
+        FLT
+          VAR  e
+          FMUL
+            FLOAT  2.
+            FLOAT  3.1415927
+      VAR  e
+      IF
+        AND
+          FLT
+            VAR  e
+            FLOAT  0.
+          NOT
+            FLT
+              VAR  x
+              FNEG
+                VAR  e
+        APP
+          VAR  pi_div
+          FADD
+            VAR  e
+            VAR  x
+          FDIV
+            VAR  x
+            FLOAT  2.
+        IF
+          AND
+            FLT
+              FLOAT  0.
+              VAR  e
+            NOT
+              FLT
+                VAR  x
+                VAR  e
+          APP
+            VAR  pi_div
+            FSUB
+              VAR  e
+              FDIV
+                VAR  x
+                FLOAT  2.
+            FDIV
+              VAR  x
+              FLOAT  2.
+          APP
+            VAR  pi_div
+            VAR  e
+            FMUL
+              VAR  x
+              FLOAT  2.
+    LETREC
+      VAR  pi4div
+      VAR  x
+      IF
+        FLT
+          VAR  x
+          FDIV
+            FLOAT  3.1415927
+            FLOAT  2.
+        TUPLE
+          VAR  x
+          FLOAT  1.
+        IF
+          FLT
+            VAR  x
+            FLOAT  3.1415927
+          TUPLE
+            FSUB
+              FLOAT  3.1415927
+              VAR  x
+            FLOAT  -1.
+          IF
+            FLT
+              VAR  x
+              FMUL
+                FLOAT  3.1415927
+                FLOAT  1.5
+            TUPLE
+              FSUB
+                VAR  x
+                FLOAT  3.1415927
+              FLOAT  -1.
+            TUPLE
+              FSUB
+                FMUL
+                  FLOAT  3.1415927
+                  FLOAT  2.
+                VAR  x
+              FLOAT  1.
+      LETREC
+        VAR  tailor_cos
+        VAR  e
+        LET
+          INT  x
+          VAR  e
+          LET
+            INT  xx
+            FMUL
+              VAR  x
+              VAR  x
+            LET
+              INT  t2
+              FDIV
+                VAR  xx
+                FLOAT  2.
+              LET
+                INT  t4
+                FDIV
+                  FMUL
+                    VAR  t2
+                    VAR  xx
+                  FLOAT  12.
+                LET
+                  INT  t6
+                  FDIV
+                    FMUL
+                      VAR  t4
+                      VAR  xx
+                    FLOAT  30.
+                  LET
+                    INT  t8
+                    FDIV
+                      FMUL
+                        VAR  t6
+                        VAR  xx
+                      FLOAT  56.
+                    LET
+                      INT  t10
+                      FDIV
+                        FMUL
+                          VAR  t8
+                          VAR  xx
+                        FLOAT  90.
+                      FSUB
+                        FADD
+                          FSUB
+                            FADD
+                              FSUB
+                                FLOAT  1.
+                                VAR  t2
+                              VAR  t4
+                            VAR  t6
+                          VAR  t8
+                        VAR  t10
+        LETTUPLE
+          VAR  a
+          VAR  b
+          APP
+            VAR  pi4div
+            APP
+              VAR  pi_div
+              FLOAT  3.
+              FMUL
+                FLOAT  3.1415927
+                FLOAT  2.
+          FMUL
+            VAR  b
+            APP
+              VAR  tailor
+              VAR  a
+  UNIT

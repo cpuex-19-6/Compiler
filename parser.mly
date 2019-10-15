@@ -8,12 +8,20 @@ let letfloat x e1 e2 = 0,Let((x, Type.Int), e1, e2)
 let letint x e1 e2 = 0,Let((x, Type.Int), e1,e2)
 let letrec ident formal_args body e = 
 0, LetRec({name = addtyp ident; args = List.map addtyp formal_args; body = body},e)
+let lettuple p e1 e2 = 0, LetTuple(List.map addtyp p, e1, e2)
 let (&!) e n = 0,AndI(e,n)
 let var x = 0,Var x
 let int n = 0,Int n
+let iff e1 e2 e3 = 0,If(e1,e2,e3)
+let nott e = 0,Not(e)
+let fneg e = 0,FNeg(e)
+let (&&!) e1 e2  = 0,And(e1,e2)
+let fless e1 e2 = 0,FLT(e1,e2)
 let float f = 0,Float f
 let ftoi e = 0,FtoI e
 let itof e = 0,ItoF e
+let app f e = 0,App(f,e)
+let tuple e = 0,Tuple(e)
 let (+!) e1 e2 = 0,FAdd(e1,e2)
 let (-!) e1 e2 = 0,FSub(e1,e2)
 let ( *!) e1 e2 = 0,FMul(e1,e2)
@@ -23,9 +31,19 @@ let start = Parsing.symbol_start_pos ()
 
 let pi = float 3.1415927
 let pi' = 3.1415927
+let pi_div e x = 
+iff ((nott (fless e (float 0.))) &&! (fless e ((float 2.) *! pi))) e @@
+iff ((fless e (float 0.)) &&! (nott(fless x (fneg e)))) (app (var "pi_div") [(e +! x); (x /! (float 2.))]) @@
+iff (((fless (float 0.) e)) &&! (nott (fless x e))) (app (var "pi_div") [(e-!(x/!(float 2.)));(x/!(float 2.))]) @@
+(app (var "pi_div") [e;(x*!(float 2.))])
 
+let pi4div x = 
+iff (fless x (pi/!float(2.))) (tuple [x;(float 1.)]) @@
+iff (fless x pi) (tuple [pi-!x;float (-1.)]) @@
+iff (fless x (pi*!float(1.5))) (tuple[x-!pi;float (-1.)]) @@
+tuple [(pi*!float(2.))-!x;float 1.]
    
-let cos e =
+let tailor_cos e =
   letfloat "x" e @@
   letfloat "xx" (var "x" *! var "x") @@
   letfloat "t2" (var "xx" /! float 2.) @@
@@ -34,6 +52,13 @@ let cos e =
   letfloat "t8" (var "t6" *! var "xx" /! float 56.) @@
   letfloat "t10" (var "t8" *! var "xx" /! float 90.) @@
   float 1. -! var "t2" +! var "t4" -! var "t6" +! var "t8" -! var "t10"
+
+let cos e = 
+letrec "pi_div" ["e";"x"] (pi_div (var "e") (var "x")) @@
+letrec "pi4div" ["x"] (pi4div (var "x")) @@
+letrec "tailor_cos" ["e"] (tailor_cos (var "e")) @@
+lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
+(var "b") *! (app (var "tailor") [var "a"])
 
 let sin e =
   letfloat "x" e @@

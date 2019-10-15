@@ -1,0 +1,1 @@
+let c = cos 3.0 in ()
