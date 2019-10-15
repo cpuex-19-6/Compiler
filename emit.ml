@@ -219,7 +219,7 @@ and g' oc pos e =
   (* 関数呼び出しの仮想命令の実装 (caml2html: emit_call) *)
   | Tail, CallCls(x, ys, zs) -> (* 末尾呼び出し (caml2html: emit_tailcall) *)
       g'_args oc pos [(x, reg_cl)] ys zs;
-      Printf.fprintf oc "%d\tlw\t%s, 0(%s)\t\t! %d\n" (pcincr()) (reg reg_sw) (reg reg_cl) pos;
+      Printf.fprintf oc "%d\tlw\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg reg_sw) (reg reg_cl) pos;
       Printf.fprintf oc "%d\tjalr\tx0, %s, 0\t\t! %d\n" (pcincr()) (reg reg_sw) pos;
   | Tail, CallDir(Id.L(x), ys, zs) -> (* 末尾呼び出し *)
       g'_args oc pos [] ys zs;
