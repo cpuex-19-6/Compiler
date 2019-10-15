@@ -260,7 +260,7 @@ and g' oc pos e =
 and g'_tail_if oc pos e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
   Printf.fprintf oc "%d\t%s \t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) (try
-    (Hashtbl.find address_list b_else) -(!pc)
+    (Hashtbl.find address_list b_else) - (!pc) + 4
     with Not_found -> Printf.printf "%s not found\n" b_else;failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_else)) pos;
   let stackset_back = !stackset in
   g oc (Tail, e1);
@@ -271,7 +271,7 @@ and g'_non_tail_if oc pos dest e1 e2 b bn x y=
   let b_else = Id.genid (b ^ "_else") in
   let b_cont = Id.genid (b ^ "_cont") in
   Printf.fprintf oc "%d\t%s\t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) (try
-    (Hashtbl.find address_list b_else)-(!pc)
+    (Hashtbl.find address_list b_else) - (!pc) + 4
     with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_else)) pos;
   let stackset_back = !stackset in
   g oc (dest, e1);
