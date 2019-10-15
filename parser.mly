@@ -4,7 +4,7 @@ open Syntax
 let addtyp x = (x, Type.gentyp ())
 
 let start_pos = Parsing.symbol_start_pos ()
-let letfloat x e1 e2 = 0,Let((x, Type.Int), e1, e2)
+let letfloat x e1 e2 = 0,Let((x, Type.Float), e1, e2)
 let letint x e1 e2 = 0,Let((x, Type.Int), e1,e2)
 let letrec ident formal_args body e = 
 0, LetRec({name = addtyp ident; args = List.map addtyp formal_args; body = body},e)
@@ -58,7 +58,7 @@ letrec "pi_div" ["e";"x"] (pi_div (var "e") (var "x")) @@
 letrec "pi4div" ["x"] (pi4div (var "x")) @@
 letrec "tailor_cos" ["e"] (tailor_cos (var "e")) @@
 lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
-(var "b") *! (app (var "tailor") [var "a"])
+(var "b") *! (app (var "tailor_cos") [var "a"])
 
 let sin e =
   letfloat "x" e @@
@@ -66,7 +66,7 @@ let sin e =
   (float 1. -! itof (var "n" &! 1) *! float 2.) *!
     cos (var "x" -! itof (var "n") *! pi -! pi /! float 2.)
 
-let tan e =
+let tailor_tan e =
   letfloat "x" e @@
   letfloat "xx" (var "x" *! var "x") @@
   letfloat "t3" (var "x" *! var "xx" /! float 3.) @@
@@ -75,7 +75,14 @@ let tan e =
   letfloat "t9" (var "t7" *! var "xx" *! (float 62. /! float 153.)) @@
   var "x" +! var "t3" +! var "t5" +! var "t7" +! var "t9"
 
-let atan e =
+let tan e = 
+letrec "pi_div" ["e";"x"] (pi_div (var "e") (var "x")) @@
+letrec "pi4div" ["x"] (pi4div (var "x")) @@
+letrec "tailor_tan" ["e"] (tailor_tan (var "e")) @@
+lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
+(var "b") *! (app (var "tailor_tan") [var "a"])
+
+let tailor_atan e =
   letfloat "x" e @@
   letfloat "t1" ((var "x" -! float 2.) /! float 5.) @@
   letfloat "t2" ((var "t1" *! var "t1" *! float 2.)) @@
@@ -83,6 +90,13 @@ let atan e =
   letfloat "t4" ((var "t3" *! var "t1" *! (float 18. /! float 11.))) @@
   letfloat "t5" ((var "t4" *! var "t1" *! (float 41. /! float 30.))) @@
   float 1.10714872 +! var "t1" -! var "t2" +! var "t3" -! var "t4" +! var "t5"
+
+let atan e = 
+letrec "pi_div" ["e";"x"] (pi_div (var "e") (var "x")) @@
+letrec "pi4div" ["x"] (pi4div (var "x")) @@
+letrec "tailor_atan" ["e"] (tailor_tan (var "e")) @@
+lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
+(var "b") *! (app (var "tailor_atan") [var "a"])
 
 let xor x y = 
 Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))

@@ -1,4 +1,4 @@
- let rec my_cos x = 
+ let c = 
   let rec pi_div e x = 
        if 0. <= e && e < (3.1415926535*.2.) then e 
      else if 0. > e && -.e <= x then pi_div (e+.x) (x/.2.)
@@ -18,5 +18,5 @@
      let t10 = xx *. t8 /. 90. in
      let t12 = xx *. t10 /. 132. in
      1. -. t2 +. t4 -. t6 +. t8 -. t10 +. t12 in
-  let (a,b) = pi4div(pi_div x (3.1415926535 *. 2.)) in
+  let (a,b) = pi4div(pi_div 1.2 (3.1415926535 *. 2.)) in
   b *. (tailor a) 

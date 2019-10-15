@@ -123,10 +123,10 @@ and g' oc pos e =
   | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "%d\tslwi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos (* TODO: RISC-V *)
   | NonTail(x), Lwz(y, V(z)) -> 
     Printf.fprintf oc "%d\taddi\tx31, %s, %s\t\t! %d\n" (pcincr()) (reg y) (reg z) pos;
-    Printf.fprintf oc "%d\tlw\t%s, 0(x31)\t\t! %d\n" (pcincr()) (reg x)  pos
-  | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc "%d\tlw\t%s, %d(%s)\t\t! %d\n" (pcincr())(reg x) z (reg y) pos
+    Printf.fprintf oc "%d\tlw\t%s, x31, 0\t\t! %d\n" (pcincr()) (reg x)  pos
+  | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr())(reg x) (reg y) z pos
   | NonTail(_), Stw(x, y, V(z)) -> Printf.fprintf oc "%d \tstwx\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
-  | NonTail(_), Stw(x, y, C(z)) -> Printf.fprintf oc "%d \tsw\t%s, %d(%s)\t\t! %d\n" (pcincr()) (reg x) z (reg y) pos
+  | NonTail(_), Stw(x, y, C(z)) -> Printf.fprintf oc "%d \tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
   | NonTail(x), FMr(y) when x = y -> ()
   | NonTail(x), FMr(y) -> Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg y) pos
   | NonTail(x), FNeg(y) -> Printf.fprintf oc "%d\tfsgnjn\t%s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
@@ -136,17 +136,17 @@ and g' oc pos e =
   | NonTail(x), FDiv(y, z) -> Printf.fprintf oc "%d\tfdiv\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Lfd(y, V(z)) -> 
     Printf.fprintf oc "%d\taddi\tx31, %s, %s\t\t! %d\n" (pcincr()) (reg y) (reg z) pos;
-    Printf.fprintf oc "%d\tflw\t%s, 0(x31)\t\t! %d\n" (pcincr()) (reg x)  pos
+    Printf.fprintf oc "%d\tflw\t%s, x31, 0\t\t! %d\n" (pcincr()) (reg x)  pos
   | NonTail(x), Lfd(y, C(z)) -> Printf.fprintf oc "%d\tflw\t%s, %d(%s)\t\t! %d\n" (pcincr())(reg x) z (reg y) pos
   | NonTail(_), Stfd(x, y, V(z)) -> 
     Printf.fprintf oc "%d\taddi\tx31, %s, %s\t\t! %d\n" (pcincr()) (reg y) (reg z) pos;
-    Printf.fprintf oc "%d\tfsw\t%s, 0(x31)\t\t! %d\n" (pcincr()) (reg x)  pos
+    Printf.fprintf oc "%d\tfsw\tx31, %s, 0\t\t! %d\n" (pcincr()) (reg x)  pos
   | NonTail(_), Stfd(x, y, C(z)) -> Printf.fprintf oc "%d\tfsw\t%s, %d(%s)\t\t! %d\n" (pcincr()) (reg x) z (reg y) pos
   | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
   (* 退避の仮想命令の実装 (caml2html: emit_save) *)
   | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
       save y;
-      Printf.fprintf oc "%d \tsw\t%s, %d(%s)\t\t! %d\n" (pcincr()) (reg x) (offset y) (reg reg_sp) pos
+      Printf.fprintf oc "%d \tsw\t%s, %s %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg x) (offset y) pos
   | NonTail(_), Save(x, y) when List.mem x allfregs && not (S.mem y !stackset) ->
       savef y;
       Printf.fprintf oc "%d \tstfd\t%s, %d(%s)\t\t! %d\n" (pcincr()) (reg x) (offset y) (reg reg_sp) pos
@@ -225,9 +225,9 @@ and g' oc pos e =
       Printf.fprintf oc "%d\taddi\t%s, x1, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       g'_args oc pos [(x, reg_cl)] ys zs;
       let ss = stacksize () in
-      Printf.fprintf oc "%d\tsw\t%s, %d(%s)\t\t! %d\n" (pcincr()) (reg reg_tmp) (ss - 4) (reg reg_sp) pos;
+      Printf.fprintf oc "%d\tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_sp) (ss - 4) pos;
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
-      Printf.fprintf oc "%d\tlw\t%s, 0(%s)\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_cl) pos;
+      Printf.fprintf oc "%d\tlw\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_cl) pos;
       Printf.fprintf oc "%d\tjalr\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       Printf.fprintf oc "%d\taddi\t%s, %s, -%d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
       Printf.fprintf oc "%d\tlw\t%s, %d(%s)\t\t! %d\n" (pcincr()) (reg reg_tmp) (ss - 4) (reg reg_sp) pos;
@@ -267,7 +267,7 @@ and g'_non_tail_if oc pos dest e1 e2 b bn x y=
   let b_cont = Id.genid (b ^ "_cont") in
   Printf.fprintf oc "%d\t%s\t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) (try
     (Hashtbl.find address_list b_else)-(!pc)
-    with Not_found -> Printf.printf "%s not found\n" b_else;failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_else)) pos;
+    with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_else)) pos;
   let stackset_back = !stackset in
   g oc (dest, e1);
   let stackset1 = !stackset in
@@ -315,8 +315,14 @@ and g'_args oc pos x_reg_cl ys zs =
           if l <> 0 then
             jpincr())
     | NonTail(x), FLi(d) ->
-        (*let _ = load_label (reg reg_tmp) l in*)
-        jpincr()
+    let u = Int32.to_int(get_upper d) in
+    let l = Int32.to_int(get_lower d) in
+    if u = 0 then 
+     (jpincr();jpincr())
+    else
+       (jpincr();
+       (if l <> 0 then
+          jpincr();jpincr()))
     | NonTail(x), SetL(Id.L(y)) ->
         (*let s = load_label x y in
         Printf.fprintf oc "%s" s*)()
@@ -337,7 +343,7 @@ and g'_args oc pos x_reg_cl ys zs =
     | NonTail(x), Sub(y, C(z)) -> jpincr()
     | NonTail(x), Slw(y, V(z)) -> jpincr()
     | NonTail(x), Slw(y, C(z)) -> jpincr()
-    | NonTail(x), Lwz(y, V(z)) -> jpincr()
+    | NonTail(x), Lwz(y, V(z)) -> jpincr();jpincr()
     | NonTail(x), Lwz(y, C(z)) -> jpincr()
     | NonTail(_), Stw(x, y, V(z)) -> jpincr()
     | NonTail(_), Stw(x, y, C(z)) -> jpincr()
@@ -487,16 +493,20 @@ and g'_args oc pos x_reg_cl ys zs =
       (fun (z, fr) -> jpincr())
       (shuffle reg_fsw zfrs)
   
+let temp_counter = ref 0
 
 let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
   Printf.fprintf oc "# %s:\n" x;
   k oc (Tail, e);
+  temp_counter := !counter;
   counter := !counter - !num_genid2;
+  num_genid2 := 0;
   stackset := S.empty;
   stackmap := [];
   Hashtbl.add address_list x !pc;
-  g oc (Tail, e)
-
+  g oc (Tail, e);
+  counter := !temp_counter
+ 
 let kk oc fundefs =
   List.iter (fun fundef -> k oc (Tail, fundef.body)) fundefs
 

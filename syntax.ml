@@ -48,6 +48,7 @@ let rec print_syntax outchan t n  = match t with
 | Not(_,x) -> print_space outchan n;Printf.fprintf outchan "%s" "NOT\n";print_syntax outchan x (n+2)
 | Neg(_,x) -> print_space outchan n;Printf.fprintf outchan "%s" "NEG\n";print_syntax outchan x (n+2)
 | And((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "AND\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
+| AndI((_,x),y) -> print_space outchan n;Printf.fprintf outchan "%s" "ANDI\n";print_syntax outchan x (n+2);Printf.fprintf outchan "%d\n" y 
 | Or((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "OR\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | FEq((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "FEQ\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | FLT((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "FLT\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
@@ -63,6 +64,8 @@ let rec print_syntax outchan t n  = match t with
 | If((_,x),(_,y),(_,z)) -> print_space outchan n;Printf.fprintf outchan "%s" "IF\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2);print_syntax outchan z (n+2)
 | Let((a,b),(_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "LET\n";print_idtype outchan (a,b) (n+2);print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | Var(x) -> print_space outchan n;Printf.fprintf outchan "%s" "VAR  ";Printf.fprintf outchan "%s" (x^"\n")
+| ItoF((_,x)) -> print_space outchan n;Printf.fprintf outchan "%s" "ITOF\n";print_syntax outchan x (n+2)
+| FtoI((_,x)) -> print_space outchan n;Printf.fprintf outchan "%s" "FTOI\n";print_syntax outchan x (n+2)
 | LetRec(x,(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "LETREC\n";print_idtype outchan x.name (n+2);print_idlist outchan x.args (n+2);print_syntax outchan (snd(x.body)) (n+2);print_syntax outchan y (n+2)
 | App((_,x),y) -> print_space outchan n;Printf.fprintf outchan "%s" "APP\n";print_syntax outchan x (n+2);print_syntax_list outchan y (n+2)
 | Tuple(x) -> print_space outchan n;Printf.fprintf outchan "%s" "TUPLE\n";print_syntax_list outchan x (n+2)

@@ -87,7 +87,7 @@ let rec remove_and_uniq xs = function
 let fv_id_or_imm = function V(x) -> [x] | _ -> []
 let rec fv_exp = function
   | Nop | Li(_) | FLi(_) | SetL(_) | Comment(_) | Restore(_) -> []
-  | Mr(x) | Neg(x) | FMr(x) | FNeg(x) | Save(x, _) -> [x]
+  | Mr(x) | Neg(x) | FMr(x) | FNeg(x) | Save(x, _) | ItoF(x) | FtoI(x) | AndI(x,_) -> [x]
   | Add(x, y') | Sub(x, y') | Slw(x, y') | Lfd(x, y') | Lwz(x, y') -> x :: fv_id_or_imm y'
   | Stw(x, y, z') | Stfd(x, y, z') -> x :: y :: fv_id_or_imm z'
   | And(x, y) | Or(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | FEq(x, y) | FLT(x, y) -> [x; y]
