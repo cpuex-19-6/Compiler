@@ -45,10 +45,11 @@ let num_genid2 = ref 0
 
 let load_label pos r label =
   let r' = reg r in
-  try(Printf.sprintf
-    "%d\tlui\t%s, %d\t\t! %d\n%d\taddi\t%s, %s, %d\t\t! %d\n"
-   (pcincr()) r' (upper(Hashtbl.find address_list label)) pos (pcincr()) r' r' (lower(Hashtbl.find address_list label)) pos)
-   with Not_found -> Printf.sprintf "Label "^label^" not found\n"
+  try
+    (Printf.sprintf
+      "%d\tlui\t%s, %d\t\t! %d\n%d\taddi\t%s, %s, %d\t\t! %d\n"
+      (pcincr()) r' (upper(Hashtbl.find address_list label)) pos (pcincr()) r' r' (lower(Hashtbl.find address_list label)) pos)
+  with Not_found -> Printf.printf "LABEL %s NOT FOUND\n" label; Printf.sprintf "Label "^label^" NOT_FOUND\n"
 
 
 (* 関数呼び出しのために引数を並べ替える(register shuffling) (caml2html: emit_shuffle) *)
@@ -223,9 +224,12 @@ and g' oc pos e =
       Printf.fprintf oc "%d\tjalr\tx0, %s, 0\t\t! %d\n" (pcincr()) (reg reg_sw) pos;
   | Tail, CallDir(Id.L(x), ys, zs) -> (* 末尾呼び出し *)
       g'_args oc pos [] ys zs;
-      Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) (try
-        (Hashtbl.find address_list x) - (!pc)
-        with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" x)) pos;
+      (try
+        Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list x) - (!pc)) pos;
+      with Not_found ->
+        Printf.printf "LABEL %s NOT FOUND\n" x;
+        Printf.fprintf oc "%d\tjal\tx0, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
+      )
   | NonTail(a), CallCls(x, ys, zs) ->
       Printf.fprintf oc "%d\taddi\t%s, x1, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       g'_args oc pos [(x, reg_cl)] ys zs;
@@ -247,9 +251,12 @@ and g' oc pos e =
       let ss = stacksize () in
       Printf.fprintf oc "%d\tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_tmp) (ss - 4) pos;
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
-      Printf.fprintf oc "%d\tjal\tx1, %d\t\t! %d\n" (pcincr()) (try
-        (Hashtbl.find address_list x) - (!pc)
-        with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" x)) pos;
+      (try
+        Printf.fprintf oc "%d\tjal\tx1, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list x) - (!pc)) pos;
+      with Not_found ->
+        Printf.printf "LABEL %s NOT FOUND\n" x;
+        Printf.fprintf oc "%d\tjal\tx1, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
+      );
       Printf.fprintf oc "%d\taddi\t%s, %s, -%d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
       Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_sp) (ss - 4) pos;
       if List.mem a allregs && a <> regs.(0) then
@@ -259,9 +266,12 @@ and g' oc pos e =
       Printf.fprintf oc "%d\taddi\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos
 and g'_tail_if oc pos e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
-  Printf.fprintf oc "%d\t%s \t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) (try
-    (Hashtbl.find address_list b_else) - (!pc) + 4
-    with Not_found -> Printf.printf "%s not found\n" b_else;failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_else)) pos;
+  (try
+    Printf.fprintf oc "%d\t%s \t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) - (!pc) + 4) pos;
+  with Not_found ->
+    Printf.printf "LABEL %s NOT FOUND\n" b_else;
+    Printf.fprintf oc "%d\t%s \t%s, %s, NOT_FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
+  );
   let stackset_back = !stackset in
   g oc (Tail, e1);
   Printf.fprintf oc "# %s:\n" b_else;
@@ -270,15 +280,21 @@ and g'_tail_if oc pos e1 e2 b bn x y =
 and g'_non_tail_if oc pos dest e1 e2 b bn x y=
   let b_else = Id.genid (b ^ "_else") in
   let b_cont = Id.genid (b ^ "_cont") in
-  Printf.fprintf oc "%d\t%s\t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) (try
-    (Hashtbl.find address_list b_else) - (!pc) + 4
-    with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_else)) pos;
+  (try
+    Printf.fprintf oc "%d\t%s\t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) - (!pc) + 4) pos;
+  with Not_found ->
+    Printf.printf "LABEL %s NOT FOUND\n" b_else;
+    Printf.fprintf oc "%d\t%s\t%s, %s, NOT FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
+  );
   let stackset_back = !stackset in
   g oc (dest, e1);
   let stackset1 = !stackset in
-  Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) (try
-    (Hashtbl.find address_list b_cont) - (!pc)
-    with Not_found -> failwith (Printf.sprintf  "LABEL %s NOT FOUND" b_cont)) pos;
+  (try
+    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc)) pos; (* ここ - (!pc) + 4 かも *)
+  with Not_found ->
+    Printf.printf "LABEL %s NOT FOUND\n" b_cont;
+    Printf.fprintf oc "%d\tjal\tx0, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
+  );
   Printf.fprintf oc "# %s:\n" b_else;
   stackset := stackset_back;
   g oc (dest, e2);
