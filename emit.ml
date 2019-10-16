@@ -303,7 +303,7 @@ and g'_args oc pos x_reg_cl ys zs =
     (fun (z, fr) -> Printf.fprintf oc "\tfmr\t%s, %s\t\t! %d\n" (reg fr) (reg z) pos)
     (shuffle reg_fsw zfrs)
 
- let rec k oc = function
+let rec k oc = function
     | dest, Ans(_, exp) -> k' oc (dest, exp)
     | dest, Let(_, (x, t), exp, e) ->
         k' oc (NonTail(x), exp);
@@ -460,7 +460,7 @@ and g'_args oc pos x_reg_cl ys zs =
     let stackset_back = !stackset in
     k oc (Tail, e1);
     Hashtbl.add address_list b_else !jpc;
-    Printf.printf "%s\n" b_else;
+    Printf.printf "address_list に (%s, %d) を追加\n" b_else !jpc;
     stackset := stackset_back;
     k oc (Tail, e2)
   and k'_non_tail_if oc dest e1 e2 b bn x y=
@@ -473,11 +473,11 @@ and g'_args oc pos x_reg_cl ys zs =
     let stackset1 = !stackset in
     jpincr();
     Hashtbl.add address_list b_else !jpc;
-    Printf.printf "%s\n"b_else;
+    Printf.printf "address_list に (%s, %d) を追加\n" b_else !jpc;
     stackset := stackset_back;
     k oc (dest, e2);
     Hashtbl.add address_list b_cont !jpc;
-    Printf.printf "%s\n" b_cont;
+    Printf.printf "address_list に (%s, %d) を追加\n" b_cont !jpc;
     let stackset2 = !stackset in
     stackset := S.inter stackset1 stackset2
   and k'_args oc x_reg_cl ys zs =
@@ -509,6 +509,7 @@ let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
   stackset := S.empty;
   stackmap := [];
   Hashtbl.add address_list x !pc;
+  Printf.printf "address_list に (%s, %d) を追加\n" x !pc;
   g oc (Tail, e);
   counter := !temp_counter
  
