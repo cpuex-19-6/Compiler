@@ -132,6 +132,8 @@ and g' pos dest cont regenv = function (* 各命令のレジスタ割り当て (caml2html: r
   | Neg(x) -> (Ans(pos, Neg(find x Type.Int regenv)), regenv)
   | Add(x, y') -> (Ans(pos, Add(find x Type.Int regenv, find' y' regenv)), regenv)
   | Sub(x, y') -> (Ans(pos, Sub(find x Type.Int regenv, find' y' regenv)), regenv)
+  | Div(x, y') -> (Ans(pos, Div(find x Type.Int regenv, find' y' regenv)), regenv)
+  | Rem(x, y') -> (Ans(pos, Rem(find x Type.Int regenv, find' y' regenv)), regenv)
   | Slw(x, y') -> (Ans(pos, Slw(find x Type.Int regenv, find' y' regenv)), regenv)
   | Lwz(x, y') -> (Ans(pos, Lwz(find x Type.Int regenv, find' y' regenv)), regenv)
   | Stw(x, y, z') -> (Ans(pos, Stw(find x Type.Int regenv, find y Type.Int regenv, find' z' regenv)), regenv)

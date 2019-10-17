@@ -10,6 +10,8 @@ and tt = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | Neg of t
   | Add of t * t
   | Sub of t * t
+  | Div of t * t
+  | Rem of t * t
   | FNeg of t
   | FAdd of t * t
   | FSub of t * t
@@ -54,6 +56,11 @@ let rec print_syntax outchan t n  = match t with
 | FLT((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "FLT\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | Add((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "ADD\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | Sub((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "SUB\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
+| Div((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "DIV\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
+| Rem((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "REM\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
+| Read -> print_space outchan n;Printf.fprintf outchan "%s" "READ\n"
+| FRead -> print_space outchan n;Printf.fprintf outchan "%s" "FREAD\n"
+| Write((_,x)) -> print_space outchan n;Printf.fprintf outchan "%s" "WRITE\n";print_syntax outchan x (n+2)
 | FNeg((_,x)) -> print_space outchan n;Printf.fprintf outchan "%s" "FNEG\n";print_syntax outchan x (n+2)
 | FAdd((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "FADD\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | FSub((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "FSUB\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)

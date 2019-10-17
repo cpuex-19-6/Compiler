@@ -25,6 +25,8 @@ and exp = (* 一つ一つの命令に対応する式 (caml2html: sparcasm_exp) *)
   | Neg of Id.t
   | Add of Id.t * id_or_imm
   | Sub of Id.t * id_or_imm
+  | Div of Id.t * id_or_imm
+  | Rem of Id.t * id_or_imm
   | Slw of Id.t * id_or_imm
   | Lwz of Id.t * id_or_imm
   | Stw of Id.t * Id.t * id_or_imm
@@ -86,9 +88,9 @@ let rec remove_and_uniq xs = function
 (* free variables in the order of use (for spilling) (caml2html: sparcasm_fv) *)
 let fv_id_or_imm = function V(x) -> [x] | _ -> []
 let rec fv_exp = function
-  | Nop | Li(_) | FLi(_) | SetL(_) | Comment(_) | Restore(_) -> []
-  | Mr(x) | Neg(x) | FMr(x) | FNeg(x) | Save(x, _) | ItoF(x) | FtoI(x) | AndI(x,_) -> [x]
-  | Add(x, y') | Sub(x, y') | Slw(x, y') | Lfd(x, y') | Lwz(x, y') -> x :: fv_id_or_imm y'
+  | Nop | Li(_) | FLi(_) | SetL(_) | Comment(_) | Restore(_) | Read | FRead -> []
+  | Mr(x) | Neg(x) | FMr(x) | FNeg(x) | Save(x, _) | ItoF(x) | FtoI(x) | AndI(x,_) | FAbs(x) | FSqrt(x) | Write(x) -> [x]
+  | Add(x, y') | Sub(x, y') | Div(x, y') | Rem(x, y') | Slw(x, y') | Lfd(x, y') | Lwz(x, y') -> x :: fv_id_or_imm y'
   | Stw(x, y, z') | Stfd(x, y, z') -> x :: y :: fv_id_or_imm z'
   | And(x, y) | Or(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | FEq(x, y) | FLT(x, y) -> [x; y]
   | IfEq(x, y', e1, e2) | IfLE(x, y', e1, e2) | IfGE(x, y', e1, e2) ->  x :: fv_id_or_imm y' @ remove_and_uniq S.empty (fv e1 @ fv e2) (* uniq here just for efficiency *)

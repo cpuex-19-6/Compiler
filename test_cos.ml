@@ -1,1 +1,1 @@
-let c = cos 3.0 in ()
+let a = print_int 124 in ()

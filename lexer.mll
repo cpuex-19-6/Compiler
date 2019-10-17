@@ -96,6 +96,8 @@ rule token = parse
     { READINT }
 | "read_float"
     { READFLOAT }
+| "print_int"
+    { PRINTINT }
 | "print_char"
     { PRINTCHAR }
 | "if"

@@ -61,6 +61,8 @@ let rec g env (pos, ebody) =
   | Closure.Write(x) -> Ans(pos, Write(x))
   | Closure.Add(x, y) -> Ans(pos, Add(x, V(y)))
   | Closure.Sub(x, y) -> Ans(pos, Sub(x, V(y)))
+  | Closure.Div(x, y) -> Ans(pos, Div(x, V(y)))
+  | Closure.Rem(x, y) -> Ans(pos, Rem(x, V(y)))
   | Closure.FNeg(x) -> Ans(pos, FNeg(x))
   | Closure.FAdd(x, y) -> Ans(pos, FAdd(x, y))
   | Closure.FSub(x, y) -> Ans(pos, FSub(x, y))

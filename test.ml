@@ -1,1 +1,1 @@
-let a = sin 3.0 in ()
+print_char 48

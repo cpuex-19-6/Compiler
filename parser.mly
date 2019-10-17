@@ -6,16 +6,24 @@ let addtyp x = (x, Type.gentyp ())
 let start_pos = Parsing.symbol_start_pos ()
 let letfloat x e1 e2 = 0,Let((x, Type.Float), e1, e2)
 let letint x e1 e2 = 0,Let((x, Type.Int), e1,e2)
-let letrec ident formal_args body e = 
-0, LetRec({name = addtyp ident; args = List.map addtyp formal_args; body = body},e)
+let letrec ident formal_args body e = 0, LetRec({name = addtyp ident; args = List.map addtyp formal_args; body = body},e)
 let lettuple p e1 e2 = 0, LetTuple(List.map addtyp p, e1, e2)
 let (&!) e n = 0,AndI(e,n)
 let var x = 0,Var x
 let int n = 0,Int n
 let iff e1 e2 e3 = 0,If(e1,e2,e3)
 let nott e = 0,Not(e)
+let add e1 e2 = 0, Add(e1,e2)
+let div e1 e2 = 0, Div(e1,e2)
+let rem e1 e2 = 0, Rem(e1,e2)
+let eq e1 e2 = 0,Eq(e1,e2)
+let le e1 e2 = 0, LE(e1,e2)
+let lt e1 e2 = 0, Not(0,LE(e2,e1))
+let neg e = 0, Neg(e)
 let fneg e = 0,FNeg(e)
 let (&&!) e1 e2  = 0,And(e1,e2)
+let ( //! ) e1 e2 = 0, Let((Id.gentmp Type.Unit, Type.Unit), e1, e2) 
+let write e = 0, Write(e)
 let fless e1 e2 = 0,FLT(e1,e2)
 let float f = 0,Float f
 let ftoi e = 0,FtoI e
@@ -28,6 +36,13 @@ let ( *!) e1 e2 = 0,FMul(e1,e2)
 let (/!) e1 e2 = 0,FDiv(e1,e2) 
 
 let start = Parsing.symbol_start_pos ()
+
+let print_int e = 
+letrec "print_int" ["x"] 
+(iff (lt (var "x") (int 0)) (write (int 45) //! (app (var "print_int") [(neg (var "x"))])) @@
+iff (lt (var "x") (int 10)) (write (add (var "x") (int 48))) @@
+((app (var "print_int") [(div (var "x") (int 10))]) //! write (add (rem (var "x") (int 10)) (int 48))))@@
+(app (var "print_int") [e])
 
 let pi = float 3.1415927
 let pi' = 3.1415927
@@ -100,6 +115,7 @@ lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])])
 
 let xor x y = 
 Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
+
 %}
 
 
@@ -140,7 +156,7 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %token XOR
 %token FISZERO FLESS FISPOS FISNEG
 %token FNEG FABS FHALF FSQR FLOOR FLOATOFINT INTOFFLOAT SQRT COS SIN TAN ATAN
-%token READINT READFLOAT PRINTCHAR
+%token READINT READFLOAT PRINTINT PRINTCHAR
 
 /* (* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) *) */
 %nonassoc IN
@@ -267,6 +283,8 @@ exp: /* (* 一般の式 (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Read }
 | READFLOAT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FRead }
+| PRINTINT simple_exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(print_int $2) }
 | PRINTCHAR simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Write($2) }
 | LET IDENT EQUAL exp IN exp
