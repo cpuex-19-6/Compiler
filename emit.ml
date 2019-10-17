@@ -32,7 +32,7 @@ let reg r =
   then String.sub r 1 (String.length r - 1)
   else r
 
-let upper n = n asr 12 + if n land (1 lsl 11) = 0 then 0 else 1
+let upper n = (n asr 12 + if n land (1 lsl 11) = 0 then 0 else 1) * 4096
 let lower n = (n lsl 51) asr 51
 
 let address_list = Hashtbl.create 0
