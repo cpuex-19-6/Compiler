@@ -114,6 +114,7 @@ and g' oc pos e =
   | NonTail(x), ItoF(y) -> Printf.fprintf oc "%d\titof\t%s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
   | NonTail(x), FtoI(y) -> Printf.fprintf oc "%d\tftoi\t%s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
   | NonTail(x), FSqrt(y) -> Printf.fprintf oc "%d\tfsqrt\t%s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
+  | NonTail(x), FFloor(y) -> Printf.fprintf oc "%d\tffloor\t%s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
   | NonTail(x), FEq(y, z) -> Printf.fprintf oc "%d\tfeq\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), FLT(y, z) -> Printf.fprintf oc "%d\tflt\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   (*Read, FRead, Write *)
@@ -124,8 +125,8 @@ and g' oc pos e =
   | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
   | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "%d\tsub\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, -%d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
-  | NonTail(x), Div(y, V(z)) -> Printf.fprintf oc "%d\tdiv\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
-  | NonTail(x), Rem(y, V(z)) -> Printf.fprintf oc "%d\trem\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
+  | NonTail(x), Div(y, z) -> Printf.fprintf oc "%d\tdiv\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
+  | NonTail(x), Rem(y, z) -> Printf.fprintf oc "%d\trem\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "%d\tsll\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos(* TODO: RISC-V *)
   | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "%d\tslli\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos (* TODO: RISC-V *)
   | NonTail(x), Lwz(y, V(z)) -> 
@@ -176,7 +177,7 @@ and g' oc pos e =
   | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Lwz _ | FtoI _  | And _ | Or _ | AndI _ | FEq _ | FLT _ as exp) ->
       g' oc pos (NonTail(regs.(0)), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
-  | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FAbs _ | FSqrt _ as exp) ->
+  | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FAbs _ | FSqrt _ | FFloor _ as exp) ->
       g' oc pos (NonTail(fregs.(0)), exp);
       Printf.fprintf oc "%d \tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
   | Tail, (Restore(x) as exp) ->
@@ -362,6 +363,7 @@ let rec k oc = function
     | NonTail(x), ItoF(y) -> jpincr()
     | NonTail(x), FtoI(y) -> jpincr()
     | NonTail(x), FSqrt(y) -> jpincr()
+    | NonTail(x), FFloor(y) -> jpincr()
     | NonTail(x), FEq(y, z) -> jpincr()
     | NonTail(x), FLT(y, z) -> jpincr()
     | NonTail(x), Read -> jpincr()
@@ -372,10 +374,8 @@ let rec k oc = function
     | NonTail(x), Add(y, C(z)) -> jpincr()
     | NonTail(x), Sub(y, V(z)) -> jpincr()
     | NonTail(x), Sub(y, C(z)) -> jpincr()
-    | NonTail(x), Div(y, V(z)) -> jpincr()
-    | NonTail(x), Div(y, C(z)) -> jpincr()
-    | NonTail(x), Rem(y, V(z)) -> jpincr()
-    | NonTail(x), Rem(y, C(z)) -> jpincr()
+    | NonTail(x), Div(y, z) -> jpincr()
+    | NonTail(x), Rem(y, z) -> jpincr()
     | NonTail(x), Slw(y, V(z)) -> jpincr()
     | NonTail(x), Slw(y, C(z)) -> jpincr()
     | NonTail(x), Lwz(y, V(z)) -> jpincr();jpincr()
@@ -412,7 +412,7 @@ let rec k oc = function
     | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Lwz _ | FtoI _ | FEq _ | FLT _ | And _ | Or _ | AndI _ as exp) ->
         k' oc (NonTail(regs.(0)), exp);
         jpincr()
-    | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FSqrt _  | FAbs _ as exp) ->
+    | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FSqrt _  | FFloor _ | FAbs _ as exp) ->
         k' oc (NonTail(fregs.(0)), exp);
         jpincr()
     | Tail, (Restore(x) as exp) ->

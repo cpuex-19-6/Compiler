@@ -14,6 +14,7 @@ and exp =
   | ItoF of Id.t
   | FtoI of Id.t
   | FSqrt of Id.t
+  | FFloor of Id.t
   | FEq of Id.t * Id.t
   | FLT of Id.t * Id.t
   | Read 
@@ -23,8 +24,8 @@ and exp =
   | Neg of Id.t
   | Add of Id.t * id_or_imm
   | Sub of Id.t * id_or_imm
-  | Div of Id.t * id_or_imm
-  | Rem of Id.t * id_or_imm
+  | Div of Id.t * Id.t
+  | Rem of Id.t * Id.t
   | Slw of Id.t * id_or_imm
   | Lwz of Id.t * id_or_imm
   | Stw of Id.t * Id.t * id_or_imm

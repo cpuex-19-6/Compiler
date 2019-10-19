@@ -20,6 +20,7 @@ and tt =
   | ItoF of Id.t
   | FtoI of Id.t
   | FSqrt of Id.t
+  | FFloor of Id.t
   | FEq of Id.t * Id.t
   | FLT of Id.t * Id.t
   | Read

@@ -11,6 +11,7 @@ and tt = (* クロージャ変換後の式 (caml2html: closure_t) *)
   | ItoF of Id.t
   | FtoI of Id.t
   | FSqrt of Id.t
+  | FFloor of Id.t
   | FEq of Id.t * Id.t
   | FLT of Id.t * Id.t
   | Read 
@@ -70,9 +71,11 @@ let rec g env known (pos, ebody) =
   | KNormal.Or(x, y) -> Or(x, y)
   | KNormal.AndI(x, y) -> AndI(x, y)
   | KNormal.FAbs(x) -> FAbs(x)
+  | KNormal.FFloor(x) -> FFloor(x)
   | KNormal.ItoF(x) -> ItoF(x)
   | KNormal.FtoI(x) -> FtoI(x)
   | KNormal.FSqrt(x) -> FSqrt(x)
+  | KNormal.FFloor(x) -> FFloor(x)
   | KNormal.FEq(x, y) -> FEq(x, y)
   | KNormal.FLT(x, y) -> FLT(x, y)
   | KNormal.Read -> Read

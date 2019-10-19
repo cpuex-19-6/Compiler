@@ -22,6 +22,7 @@ and tt = (* K正規化後の式 (caml2html: knormal_t) *)
   | ItoF of Id.t
   | FtoI of Id.t
   | FSqrt of Id.t
+  | FFloor of Id.t
   | FEq of Id.t * Id.t
   | FLT of Id.t * Id.t
   | Read
@@ -45,7 +46,7 @@ let rec fv e =
   let (pos, ebody) = e in
   match ebody with (* 式に出現する（自由な）変数 (caml2html: knormal_fv) *)
   | Unit | Int(_) | Float(_) | ExtArray(_) | Read | FRead-> S.empty
-  | Neg(x) | FNeg(x) | AndI(x,_) | FAbs(x) | ItoF(x) | FtoI(x) | FSqrt(x) | Write(x)-> S.singleton x
+  | Neg(x) | FNeg(x) | AndI(x,_) | FAbs(x) | ItoF(x) | FtoI(x) | FSqrt(x) | FFloor(x) | Write(x)-> S.singleton x
   | And(x, y) | Or(x,y) | Add(x, y) | Sub(x, y) | Div(x, y) | Rem(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) | FEq(x, y) | FLT(x, y)-> S.of_list [x; y]
   | IfEq(x, y, e1, e2) | IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
   | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
@@ -122,9 +123,12 @@ let rec g env (pos, ebody) =
       insert_let (g env e1)
         (fun x -> insert_let (g env e2)
             (fun y -> (pos, FDiv(x, y)), Type.Float))
-  | Syntax.FAbs(e1) ->
-      insert_let (g env e1)
+  | Syntax.FAbs(e) ->
+      insert_let (g env e)
       (fun x -> (pos,FAbs(x)), Type.Float)
+  | Syntax.FFloor(e) ->
+      insert_let (g env e)
+      (fun x -> (pos,FFloor(x)), Type.Float)
   | Syntax.ItoF(e) -> 
       insert_let (g env e)
       (fun x -> (pos,ItoF(x)), Type.Float)

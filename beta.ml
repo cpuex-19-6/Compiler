@@ -15,6 +15,7 @@ let rec g env (pos, ebody) = (* β簡約ルーチン本体 (caml2html: beta_g) *)
   | ItoF(x) -> pos, ItoF(find x env)
   | FtoI(x) -> pos, FtoI(find x env)
   | FSqrt(x) -> pos, FSqrt(find x env)
+  | FFloor(x) -> pos, FFloor(find x env)
   | FEq(x,y) -> pos, FEq(find x env, find y env)
   | FLT(x,y) -> pos, FLT(find x env, find y env)
   | Read -> pos, Read

@@ -1,1 +1,1 @@
-print_char 48
+let a = floor 3. in print_int(int_of_float a)

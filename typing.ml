@@ -117,6 +117,9 @@ let rec g env e = (* 型推論ルーチン (caml2html: typing_g) *)
     | FAbs((_,e)) ->
         unify Type.Float (g env e);
         Type.Float
+    | FFloor((_,e)) ->
+        unify Type.Float (g env e);
+        Type.Float
     | ItoF((_,e)) -> 
         unify Type.Int (g env e);
         Type.Float
