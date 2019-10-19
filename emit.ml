@@ -127,6 +127,20 @@ and g' oc pos e =
   | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, -%d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
   | NonTail(x), Div(y, z) -> Printf.fprintf oc "%d\tdiv\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Rem(y, z) -> Printf.fprintf oc "%d\trem\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
+  | NonTail(x), Array(y, z) -> (Printf.fprintf oc "%d\taddi\tx30, x3, 1\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\taddi\tx31, x3, %s\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\tbeq\tx31, x3, 16\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\taddi\tx3, x3, 4\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tjal\tx0, -12\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\taddi\t%s, x30, 0\t\t! %d\n" (pcincr()) (reg x) pos)
+  | NonTail(x), FArray(y, z) -> Printf.fprintf oc "%d\taddi\tx30, x3, 1\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\taddi\tx31, x3, %s\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\tbeq\tx31, x3, 16\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tfsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\taddi\tx3, x3, 4\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tjal\tx0, -12\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\taddi\t%s, x30, 0\t\t! %d\n" (pcincr()) (reg x) pos
   | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "%d\tsll\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos(* TODO: RISC-V *)
   | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "%d\tslli\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos (* TODO: RISC-V *)
   | NonTail(x), Lwz(y, V(z)) -> 
@@ -171,13 +185,13 @@ and g' oc pos e =
       assert (List.mem x allfregs);
       Printf.fprintf oc "%d\tflw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg reg_sp) (offset y) pos
   (* 末尾だったら計算結果を第一レジスタにセットしてリターン (caml2html: emit_tailret) *)
-  | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ | Read | FRead | Write _ as exp) ->
+  | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ | Write _ as exp) ->
       g' oc pos (NonTail(Id.gentmp Type.Unit), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
-  | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Lwz _ | FtoI _  | And _ | Or _ | AndI _ | FEq _ | FLT _ as exp) ->
+  | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Lwz _ | FtoI _  | And _ | Or _ | AndI _ | FEq _ | FLT _ | Read | Array _  | FArray _ as exp) ->
       g' oc pos (NonTail(regs.(0)), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
-  | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FAbs _ | FSqrt _ | FFloor _ as exp) ->
+  | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FAbs _ | FSqrt _ | FFloor _  | FRead as exp) ->
       g' oc pos (NonTail(fregs.(0)), exp);
       Printf.fprintf oc "%d \tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
   | Tail, (Restore(x) as exp) ->
@@ -297,7 +311,7 @@ and g'_non_tail_if oc pos dest e1 e2 b bn x y=
   g oc (dest, e1);
   let stackset1 = !stackset in
   (try
-    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc)) pos; (* ここ - (!pc) + 4 かも *)
+    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc) + 4) pos; (* ここ - (!pc) + 4 かも *)
   with Not_found ->
     Printf.printf "LABEL %s NOT FOUND\n" b_cont;
     Printf.fprintf oc "%d\tjal\tx0, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
@@ -376,6 +390,8 @@ let rec k oc = function
     | NonTail(x), Sub(y, C(z)) -> jpincr()
     | NonTail(x), Div(y, z) -> jpincr()
     | NonTail(x), Rem(y, z) -> jpincr()
+    | NonTail(x), Array(y, z) -> jpc := !jpc + 28;
+    | NonTail(x), FArray(y, z) -> jpc := !jpc + 28;
     | NonTail(x), Slw(y, V(z)) -> jpincr()
     | NonTail(x), Slw(y, C(z)) -> jpincr()
     | NonTail(x), Lwz(y, V(z)) -> jpincr();jpincr()
@@ -406,13 +422,13 @@ let rec k oc = function
     | NonTail(x), Restore(y) ->
         assert (List.mem x allfregs);
         jpincr()
-    | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ | Read | FRead | Write _ as exp) ->
+    | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ | Write _ as exp) ->
         k' oc (NonTail(Id.gentmp Type.Unit), exp);
         jpincr()
-    | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Lwz _ | FtoI _ | FEq _ | FLT _ | And _ | Or _ | AndI _ as exp) ->
+    | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Lwz _ | FtoI _ | FEq _ | FLT _ | And _ | Or _ | AndI _ | Read | Array _ | FArray _  as exp) ->
         k' oc (NonTail(regs.(0)), exp);
         jpincr()
-    | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FSqrt _  | FFloor _ | FAbs _ as exp) ->
+    | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FSqrt _  | FFloor _ | FAbs _ | FRead as exp) ->
         k' oc (NonTail(fregs.(0)), exp);
         jpincr()
     | Tail, (Restore(x) as exp) ->

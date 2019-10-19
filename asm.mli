@@ -20,6 +20,8 @@ and exp =
   | Read 
   | FRead 
   | Write of Id.t
+  | Array of Id.t * Id.t
+  | FArray of Id.t * Id.t
   | Mr of Id.t
   | Neg of Id.t
   | Add of Id.t * id_or_imm

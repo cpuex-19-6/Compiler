@@ -133,12 +133,17 @@ let rec g env (pos, ebody) =
             if not (S.mem x s) then load else (* [XX] a little ad hoc optimization *)
             Let(pos, (x, t), Lwz(y, C(offset)), load)) in
       load
+  | Closure.Array(x, y) ->
+       (match M.find x env with
+       | Type.Array(Type.Unit) -> Ans(pos, Nop)
+       | Type.Array(Type.Float) -> Ans(pos, FArray(x, y))
+       | _ -> Ans(pos, Array(x, y)))
   | Closure.Get(x, y) -> (* 配列の読み出し (caml2html: virtual_get) *)
       let offset = Id.genid "o" in
       (match M.find x env with
       | Type.Array(Type.Unit) -> Ans(pos, Nop)
       | Type.Array(Type.Float) ->
-          Let(pos, (offset, Type.Int), Slw(y, C(3)),
+          Let(pos, (offset, Type.Int), Slw(y, C(2)),
               Ans(pos, Lfd(x, V(offset))))
       | Type.Array(_) ->
           Let(pos, (offset, Type.Int), Slw(y, C(2)),
@@ -149,7 +154,7 @@ let rec g env (pos, ebody) =
       (match M.find x env with
       | Type.Array(Type.Unit) -> Ans(pos, Nop)
       | Type.Array(Type.Float) ->
-          Let(pos, (offset, Type.Int), Slw(y, C(3)),
+          Let(pos, (offset, Type.Int), Slw(y, C(2)),
               Ans(pos, Stfd(z, x, V(offset))))
       | Type.Array(_) ->
           Let(pos, (offset, Type.Int), Slw(y, C(2)),

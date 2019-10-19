@@ -4,7 +4,7 @@ let rec effect (_, ebody) = (* 副作用の有無 (caml2html: elim_effect) *)
   match ebody with
   | Let(_, e1, e2) | IfEq(_, _, e1, e2) | IfLE(_, _, e1, e2) -> effect e1 || effect e2
   | LetRec(_, e) | LetTuple(_, _, e) -> effect e
-  | App _ | Put _ | ExtFunApp _ -> true
+  | App _ | Put _ | ExtFunApp _ | Read | FRead | Write _ | Array _-> true
   | _ -> false
 
 let rec f (pos, ebody) = (* 不要定義削除ルーチン本体 (caml2html: elim_f) *)

@@ -54,6 +54,7 @@ let rec g env (pos, ebody) = (* α変換ルーチン本体 (caml2html: alpha_g) *)
       LetTuple(List.map (fun (x, t) -> (find x env', t)) xts,
                find y env,
                g env' e)
+  | Array(x, y) -> Array(find x env, find y env)
   | Get(x, y) -> Get(find x env, find y env)
   | Put(x, y, z) -> Put(find x env, find y env, find z env)
   | ExtArray(x) -> ExtArray(x)

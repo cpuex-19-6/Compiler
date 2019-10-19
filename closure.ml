@@ -36,6 +36,7 @@ and tt = (* クロージャ変換後の式 (caml2html: closure_t) *)
   | AppDir of Id.l * Id.t list
   | Tuple of Id.t list
   | LetTuple of (Id.t * Type.t) list * Id.t * t
+  | Array of Id.t * Id.t
   | Get of Id.t * Id.t
   | Put of Id.t * Id.t * Id.t
   | ExtArray of Id.l
@@ -48,8 +49,8 @@ type prog = Prog of fundef list * t
 let rec fv (_, ebody) =
   match ebody with
   | Unit | Int(_) | Float(_) | ExtArray(_) | Read | FRead -> S.empty
-  | Neg(x) | FNeg(x) | AndI(x,_) | ItoF(x) | FtoI(x) | FAbs(x) | FSqrt(x) | Write(x) -> S.singleton x
-  | And(x, y) | Or(x, y) | FEq(x, y) | FLT(x, y) | Add(x, y) | Sub(x, y) | Div(x, y) | Rem(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Get(x, y) -> S.of_list [x; y]
+  | Neg(x) | FNeg(x) | AndI(x,_) | ItoF(x) | FtoI(x) | FAbs(x) | FSqrt(x) | FFloor(x) | Write(x) -> S.singleton x
+  | And(x, y) | Or(x, y) | FEq(x, y) | FLT(x, y) | Add(x, y) | Sub(x, y) | Div(x, y) | Rem(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Array(x, y) | Get(x, y) -> S.of_list [x; y]
   | IfEq(x, y, e1, e2)| IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
   | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
   | Var(x) -> S.singleton x
@@ -129,6 +130,7 @@ let rec g env known (pos, ebody) =
   | KNormal.App(f, xs) -> AppCls(f, xs)
   | KNormal.Tuple(xs) -> Tuple(xs)
   | KNormal.LetTuple(xts, y, e) -> LetTuple(xts, y, g (M.add_list xts env) known e)
+  | KNormal.Array(x, y) -> Array(x, y)
   | KNormal.Get(x, y) -> Get(x, y)
   | KNormal.Put(x, y, z) -> Put(x, y, z)
   | KNormal.ExtArray(x) -> ExtArray(Id.L(x))
