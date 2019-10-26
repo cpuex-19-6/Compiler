@@ -95,7 +95,7 @@ and g' oc pos e =
       let l = Int32.to_int(get_lower d) in
       if u = 0 then 
         (Printf.fprintf oc "%d \taddi\tx31, x0, %d\t\t! %d\n" (pcincr())  l pos;
-        Printf.fprintf oc "%d\tfmvi %s, x31\t\t! %d\n" (pcincr()) (reg x) pos)
+        Printf.fprintf oc "%d\tfmvi\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos)
       else
          (Printf.fprintf oc "%d \tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
          (if l <> 0 then
@@ -290,7 +290,7 @@ and g'_tail_if oc pos e1 e2 b bn x y =
   (try
     Printf.fprintf oc "%d\t%s \t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) - (!pc) + 4) pos;
   with Not_found ->
-    Printf.printf "LABEL %s NOT FOUND\n" b_else;
+    Printf.printf "LABEL %s NOT FOUND!\n" b_else;
     Printf.fprintf oc "%d\t%s \t%s, %s, NOT_FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
   );
   let stackset_back = !stackset in
@@ -548,29 +548,30 @@ let temp_counter = ref 0
 
 let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
   Printf.fprintf oc "# %s:\n" x;
-  k oc (Tail, e);
-  temp_counter := !counter;
-  counter := !counter - !num_genid2;
-  num_genid2 := 0;
   stackset := S.empty;
   stackmap := [];
-  Hashtbl.add address_list x !pc;
-  Printf.printf "address_list に (%s, %d) を追加\n" x !pc;
-  g oc (Tail, e);
-  counter := !temp_counter
+  g oc (Tail, e)
  
-let kk oc fundefs =
-  List.iter (fun fundef -> k oc (Tail, fundef.body)) fundefs
-
+let i oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
+  stackset := S.empty;
+  stackmap := [];
+  Hashtbl.add address_list x !pc; 
+  Printf.printf "address_list に (%s, %d) を追加\n" x !pc;
+  Printf.printf "counter = %d\n" !counter;
+  k oc (Tail, e)
+ 
 let f oc (Prog(data, fundefs, e)) =
   Format.eprintf "generating assembly...@.";
-  kk oc fundefs;
+  temp_counter := !counter;
+  List.iter (fun fundef -> i oc fundef) fundefs;
+  k oc (NonTail("_R_0"), e);
   Printf.fprintf oc "# jump to main entry point\n";
   Printf.fprintf oc "0 \tjalr\tx0, x1, %d\n" (!jpc + 4);
 
   pc := 4;
   jpc := 4;
 
+  counter := !temp_counter;
   List.iter (fun fundef -> h oc fundef) fundefs;
   Printf.fprintf oc "# main program starts\n";
   stackset := S.empty;
