@@ -137,9 +137,11 @@ let rec g pos env e = (* 型推論ルーチン (caml2html: typing_g) *)
         unify pos Type.Float (g pos1 env e1);
         unify pos Type.Float (g pos2 env e2);
         Type.Bool
-    | Read -> Type.Unit
-    | FRead -> Type.Unit
-    | Write((_,e)) -> Type.Unit
+    | Read -> Type.Int
+    | FRead -> Type.Float
+    | Write((_,e)) -> 
+         unify pos Type.Int (g pos env e);
+         Type.Unit
     | Neg(pos1, e) ->
         unify pos Type.Int (g pos1 env e);
         Type.Int
