@@ -37,9 +37,9 @@ let lower n = (n lsl 51) asr 51
 
 let address_list = Hashtbl.create 0
 
-let pc = ref 0
+let pc = ref 4
 let pcincr () = let n = !pc in pc := n + 4; n
-let jpc = ref 0
+let jpc = ref 4
 let jpincr() = (jpc := !jpc + 4)
 let num_genid2 = ref 0
 
@@ -289,7 +289,7 @@ and g' oc pos e =
 and g'_tail_if oc pos e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
   (try
-    Printf.fprintf oc "%d\t%s \t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) - (!pc) + 4) pos;
+    Printf.fprintf oc "%d\t%s \t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) - (!pc)) pos;
   with Not_found ->
     Printf.printf "LABEL %s NOT FOUND!\n" b_else;
     Printf.fprintf oc "%d\t%s \t%s, %s, NOT_FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
@@ -303,7 +303,7 @@ and g'_non_tail_if oc pos dest e1 e2 b bn x y=
   let b_else = Id.genid (b ^ "_else") in
   let b_cont = Id.genid (b ^ "_cont") in
   (try
-    Printf.fprintf oc "%d\t%s\t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) - (!pc) + 4) pos;
+    Printf.fprintf oc "%d\t%s\t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) - (!pc)) pos;
   with Not_found ->
     Printf.printf "LABEL %s NOT FOUND\n" b_else;
     Printf.fprintf oc "%d\t%s\t%s, %s, NOT FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
@@ -312,7 +312,7 @@ and g'_non_tail_if oc pos dest e1 e2 b bn x y=
   g oc (dest, e1);
   let stackset1 = !stackset in
   (try
-    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc) + 4) pos; (* ここ - (!pc) + 4 かも *)
+    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc)) pos; (* ここ - (!pc) + 4 かも *)
   with Not_found ->
     Printf.printf "LABEL %s NOT FOUND\n" b_cont;
     Printf.fprintf oc "%d\tjal\tx0, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
@@ -557,8 +557,8 @@ let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
 let i oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
   stackset := S.empty;
   stackmap := [];
-  Hashtbl.add address_list x !pc; 
-  Printf.printf "address_list に (%s, %d) を追加\n" x !pc;
+  Hashtbl.add address_list x !jpc; 
+  Printf.printf "address_list に (%s, %d) を追加\n" x !jpc;
   Printf.printf "counter = %d\n" !counter;
   k oc (Tail, e)
  
@@ -567,7 +567,7 @@ let f oc (Prog(data, fundefs, e)) =
   temp_counter := !counter;
   List.iter (fun fundef -> i oc fundef) fundefs;
   Printf.fprintf oc "# jump to main entry point\n";
-  Printf.fprintf oc "0 \tjalr\tx0, x1, %d\n" (!jpc + 4);
+  Printf.fprintf oc "0 \tjalr\tx0, x1, %d\n" (!jpc);
   k oc (NonTail("_R_0"), e);
   pc := 4;
   jpc := 4;
