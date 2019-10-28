@@ -19,7 +19,7 @@ let lexbuf outchan l = (* バッファをコンパイルしてチャンネルへ出力する (caml2htm
                   (Alpha.f
                     (KNormal.f
                         (Typing.f
-                          (Parser.exp Lexer.token l)))))))))
+                          (Parser.prog Lexer.token l)))))))))
   in 
     Emit.f outchan prog(*;
     EmitBinary.f binchan prog*)
@@ -39,7 +39,7 @@ let file2 f =
   let inchan = open_in (f ^ ".ml") in
   let outchan = open_out (f ^ "-1.log") in
   try
-    Syntax.print_syntax outchan (snd(Parser.exp Lexer.token (Lexing.from_channel inchan))) 0;
+    Syntax.print_syntax outchan (snd(Parser.prog Lexer.token (Lexing.from_channel inchan))) 0;
     close_in inchan;
     close_out outchan;
   with e -> (close_in inchan; close_out outchan; raise e)

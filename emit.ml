@@ -125,7 +125,7 @@ and g' oc pos e =
   | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
   | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "%d\tsub\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, -%d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
-  | NonTail(x), Div(y, z) -> Printf.fprintf oc "%d\tdiv\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
+  | NonTail(x), Div(y, V(z)) -> Printf.fprintf oc "%d\tdiv\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Rem(y, z) -> Printf.fprintf oc "%d\trem\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Array(y, z) -> (Printf.fprintf oc "%d\taddi\tx30, x3, 1\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\taddi\tx31, x3, %s\t\t! %d\n" (pcincr()) (reg y) pos;
@@ -143,6 +143,7 @@ and g' oc pos e =
                                Printf.fprintf oc "%d\taddi\t%s, x30, 0\t\t! %d\n" (pcincr()) (reg x) pos
   | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "%d\tsll\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos(* TODO: RISC-V *)
   | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "%d\tslli\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos (* TODO: RISC-V *)
+  | NonTail(x), Sra(y, C(z)) -> Printf.fprintf oc "%d\tsrai\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos 
   | NonTail(x), Lwz(y, V(z)) -> 
       Printf.fprintf oc "%d\tadd\tx31, %s, %s\t\t! %d\n" (pcincr()) (reg y) (reg z) pos;
       Printf.fprintf oc "%d\tlw\t%s, x31, 0\t\t! %d\n" (pcincr()) (reg x)  pos
@@ -188,7 +189,7 @@ and g' oc pos e =
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ | Write _ as exp) ->
       g' oc pos (NonTail(Id.gentmp Type.Unit), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
-  | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Lwz _ | FtoI _  | And _ | Or _ | AndI _ | FEq _ | FLT _ | Read | Array _  | FArray _ as exp) ->
+  | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Sra _ | Lwz _ | FtoI _  | And _ | Or _ | AndI _ | FEq _ | FLT _ | Read | Array _  | FArray _ as exp) ->
       g' oc pos (NonTail(regs.(0)), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
   | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FAbs _ | FSqrt _ | FFloor _  | FRead as exp) ->
@@ -394,6 +395,7 @@ let rec k oc = function
     | NonTail(x), FArray(y, z) -> jpc := !jpc + 28;
     | NonTail(x), Slw(y, V(z)) -> jpincr()
     | NonTail(x), Slw(y, C(z)) -> jpincr()
+    | NonTail(x), Sra(y, C(z)) -> jpincr()
     | NonTail(x), Lwz(y, V(z)) -> jpincr();jpincr()
     | NonTail(x), Lwz(y, C(z)) -> jpincr()
     | NonTail(_), Stw(x, y, V(z)) -> jpincr();jpincr()
@@ -425,7 +427,7 @@ let rec k oc = function
     | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ | Write _ as exp) ->
         k' oc (NonTail(Id.gentmp Type.Unit), exp);
         jpincr()
-    | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Lwz _ | FtoI _ | FEq _ | FLT _ | And _ | Or _ | AndI _ | Read | Array _ | FArray _  as exp) ->
+    | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Sra _ | Lwz _ | FtoI _ | FEq _ | FLT _ | And _ | Or _ | AndI _ | Read | Array _ | FArray _  as exp) ->
         k' oc (NonTail(regs.(0)), exp);
         jpincr()
     | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FSqrt _  | FFloor _ | FAbs _ | FRead as exp) ->

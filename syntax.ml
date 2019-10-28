@@ -10,6 +10,7 @@ and tt = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | Neg of t
   | Add of t * t
   | Sub of t * t
+  | Mul of t * t
   | Div of t * t
   | Rem of t * t
   | FNeg of t
@@ -59,6 +60,7 @@ let rec print_syntax outchan t n  = match t with
 | FAbs((_,x)) -> print_space outchan n;Printf.fprintf outchan "%s" "FABS\n";print_syntax outchan x (n+2)
 | Add((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "ADD\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | Sub((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "SUB\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
+| Mul((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "MUL\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | Div((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "DIV\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | Rem((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "REM\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | Read -> print_space outchan n;Printf.fprintf outchan "%s" "READ\n"

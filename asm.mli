@@ -26,9 +26,11 @@ and exp =
   | Neg of Id.t
   | Add of Id.t * id_or_imm
   | Sub of Id.t * id_or_imm
-  | Div of Id.t * Id.t
+  | Mul of Id.t * id_or_imm
+  | Div of Id.t * id_or_imm
   | Rem of Id.t * Id.t
   | Slw of Id.t * id_or_imm
+  | Sra of Id.t * id_or_imm
   | Lwz of Id.t * id_or_imm
   | Stw of Id.t * Id.t * id_or_imm
   | FMr of Id.t 

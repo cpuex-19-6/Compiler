@@ -20,6 +20,7 @@ and tt =
   | Neg of Id.t
   | Add of Id.t * Id.t
   | Sub of Id.t * Id.t
+  | Mul of Id.t * Id.t
   | Div of Id.t * Id.t
   | Rem of Id.t * Id.t
   | FNeg of Id.t

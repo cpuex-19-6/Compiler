@@ -36,6 +36,10 @@ rule token = parse
     { MINUS }
 | '+' (* +.より後回しにしなくても良い? 最長一致? *)
     { PLUS }
+| '*'
+    { MUL }
+| '/'
+    { DIV }
 | "-."
     { MINUS_DOT }
 | "+."
@@ -124,10 +128,16 @@ rule token = parse
     { LESS_MINUS }
 | ';'
     { SEMICOLON }
+| "open"
+    { OPEN }
+| ";;" 
+    { SEMISEMI }
 | eof
     { EOF }
 | lower (digit|lower|upper|'_')* (* 他の「予約語」より後でないといけない *)
     { IDENT(Lexing.lexeme lexbuf) }
+| upper (digit|lower|upper|'_')* (* 他の「予約語」より後でないといけない *)
+    { UIDENT(Lexing.lexeme lexbuf) }
 | _
     { failwith
         (Printf.sprintf "unknown token %s near characters %d-%d"

@@ -124,6 +124,7 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %token <int> INT
 %token <float> FLOAT
 %token NOT
+%token MUL DIV
 %token MINUS
 %token PLUS
 %token MINUS_DOT
@@ -139,12 +140,13 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %token IF
 %token THEN
 %token ELSE
-%token <Id.t> IDENT
+%token <Id.t> IDENT UIDENT
 %token LET
 %token IN
 %token REC
 %token COMMA
 %token ARRAY_CREATE
+%token OPEN SEMISEMI
 %token DOT
 %token LESS_MINUS
 %token SEMICOLON
@@ -174,10 +176,24 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %left DOT
 
 /* (* 開始記号の定義 *) */
-%type <Syntax.t> exp
-%start exp
+%type <Syntax.t> prog
+%start prog
 
 %%
+
+prog:
+| OPEN UIDENT SEMISEMI main
+    { $4 }
+| exp
+    { $1 }
+
+main:
+| LET IDENT EQUAL exp main
+    %prec prec_let
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Let(addtyp $2, $4, $5) }
+| LET IDENT EQUAL exp exp
+    %prec prec_let
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Let(addtyp $2, $4, $5) }
 
 simple_exp: /* (* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) *) */
 | LPAREN exp RPAREN
@@ -210,6 +226,10 @@ exp: /* (* 一般の式 (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Add($1, $3) }
 | exp MINUS exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Sub($1, $3) }
+| exp MUL exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Mul($1, $3) }
+| exp DIV exp
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Div($1, $3) }
 | exp EQUAL exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Eq($1, $3) }
 | exp LESS_GREATER exp
@@ -305,6 +325,8 @@ exp: /* (* 一般の式 (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Put($1, $4, $7) }
 | exp SEMICOLON exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Let((Id.gentmp Type.Unit, Type.Unit), $1, $3) }
+| exp SEMICOLON
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Let((Id.gentmp Type.Unit, Type.Unit), $1, (0, Unit)) }
 | ARRAY_CREATE simple_exp simple_exp
     %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Array($2, $3) }

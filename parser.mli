@@ -3,6 +3,8 @@ type token =
   | INT of (int)
   | FLOAT of (float)
   | NOT
+  | MUL
+  | DIV
   | MINUS
   | PLUS
   | MINUS_DOT
@@ -19,11 +21,14 @@ type token =
   | THEN
   | ELSE
   | IDENT of (Id.t)
+  | UIDENT of (Id.t)
   | LET
   | IN
   | REC
   | COMMA
   | ARRAY_CREATE
+  | OPEN
+  | SEMISEMI
   | DOT
   | LESS_MINUS
   | SEMICOLON
@@ -54,5 +59,5 @@ type token =
   | PRINTINT
   | PRINTCHAR
 
-val exp :
+val prog :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Syntax.t
