@@ -222,14 +222,14 @@ exp: /* (* 一般の式 (caml2html: parser_exp) *) */
     { let (ln, e) = $2 in match e with
     | Float(f) -> ln, Float(-.f) (* -1.23などは型エラーではないので別扱い *)
     | e -> ln, Neg($2) }
+| exp MUL INT
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Mul($1, (start.pos_lnum,Int($3))) }
+| exp DIV INT
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Div($1, (start.pos_lnum,Int($3))) }
 | exp PLUS exp /* (* 足し算を構文解析するルール (caml2html: parser_add) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Add($1, $3) }
 | exp MINUS exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Sub($1, $3) }
-| exp MUL exp
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Mul($1, $3) }
-| exp DIV exp
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Div($1, $3) }
 | exp EQUAL exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Eq($1, $3) }
 | exp LESS_GREATER exp
