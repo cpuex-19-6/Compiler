@@ -265,7 +265,7 @@ and g' oc pos e =
       if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
       else if List.mem a allfregs && a <> fregs.(0) then
-        Printf.fprintf oc "%d\tfmr\t%s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) pos;
+        Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
       Printf.fprintf oc "%d\taddi\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos
   | (NonTail(a), CallDir(Id.L(x), ys, zs)) ->
       Printf.fprintf oc "%d\taddi\t%s, x1, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
@@ -284,7 +284,7 @@ and g' oc pos e =
       if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
       else if List.mem a allfregs && a <> fregs.(0) then
-        Printf.fprintf oc "%d\tfmr\t%s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) pos;
+        Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
       Printf.fprintf oc "%d\taddi\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos
 and g'_tail_if oc pos e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
@@ -338,7 +338,7 @@ and g'_args oc pos x_reg_cl ys zs =
       (0, [])
       zs in
   List.iter
-    (fun (z, fr) -> Printf.fprintf oc "\tfmr\t%s, %s\t\t! %d\n" (reg fr) (reg z) pos)
+    (fun (z, fr) -> Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg fr) (reg z) (reg z) pos)
     (shuffle reg_fsw zfrs)
 
 let rec k oc = function
