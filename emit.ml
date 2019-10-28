@@ -83,23 +83,23 @@ and g' oc pos e =
       let u = upper n in
       let l = lower n in
       if u = 0 then
-        Printf.fprintf oc "%d \taddi\t%s, x0, %d\t\t! %d\n" (pcincr()) (reg x) l pos
+        Printf.fprintf oc "%d\taddi\t%s, x0, %d\t\t! %d\n" (pcincr()) (reg x) l pos
       else
-        (Printf.fprintf oc "%d \tlui\t%s, %d\t\t! %d\n" (pcincr()) (reg x) u pos;
+        (Printf.fprintf oc "%d\tlui\t%s, %d\t\t! %d\n" (pcincr()) (reg x) u pos;
         if l <> 0 then
-          Printf.fprintf oc "%d \taddi\t%s, %s, %d\t\t! %d\n"(pcincr()) (reg x) (reg x) l pos)
+          Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n"(pcincr()) (reg x) (reg x) l pos)
   | NonTail(x), FLi(d) ->
       (*let s = load_label pos (reg reg_tmp) l in
       Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\t\t! %d\n"(pcincr()) s (reg x) (reg reg_tmp) pos;*)
       let u = Int32.to_int(get_upper d) in
       let l = Int32.to_int(get_lower d) in
       if u = 0 then 
-        (Printf.fprintf oc "%d \taddi\tx31, x0, %d\t\t! %d\n" (pcincr())  l pos;
+        (Printf.fprintf oc "%d\taddi\tx31, x0, %d\t\t! %d\n" (pcincr())  l pos;
         Printf.fprintf oc "%d\tfmvi\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos)
       else
-         (Printf.fprintf oc "%d \tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
+         (Printf.fprintf oc "%d\tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
          (if l <> 0 then
-            Printf.fprintf oc "%d \taddi\tx31, x31, %d\t\t! %d\n"(pcincr()) l pos);
+            Printf.fprintf oc "%d\taddi\tx31, x31, %d\t\t! %d\n"(pcincr()) l pos);
             Printf.fprintf oc "%d\tfmvi %s, x31\t\t! %d\n" (pcincr()) (reg x) pos )
   | NonTail(x), SetL(Id.L(y)) ->
       (*let s = load_label pos x y in
@@ -194,7 +194,7 @@ and g' oc pos e =
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
   | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FAbs _ | FSqrt _ | FFloor _  | FRead as exp) ->
       g' oc pos (NonTail(fregs.(0)), exp);
-      Printf.fprintf oc "%d \tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
+      Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
   | Tail, (Restore(x) as exp) ->
       (match locate x with
       | [i] -> g' oc pos (NonTail(regs.(0)), exp)
@@ -566,10 +566,9 @@ let f oc (Prog(data, fundefs, e)) =
   Format.eprintf "generating assembly...@.";
   temp_counter := !counter;
   List.iter (fun fundef -> i oc fundef) fundefs;
-  k oc (NonTail("_R_0"), e);
   Printf.fprintf oc "# jump to main entry point\n";
   Printf.fprintf oc "0 \tjalr\tx0, x1, %d\n" (!jpc + 4);
-
+  k oc (NonTail("_R_0"), e);
   pc := 4;
   jpc := 4;
 
