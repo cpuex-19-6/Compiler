@@ -95,12 +95,12 @@ and g' oc pos e =
       let l = Int32.to_int(get_lower d) in
       if u = 0 then 
         (Printf.fprintf oc "%d\taddi\tx31, x0, %d\t\t! %d\n" (pcincr())  l pos;
-        Printf.fprintf oc "%d\timvf\tx31, %s\t\t! %d\n" (pcincr()) (reg x) pos)
+        Printf.fprintf oc "%d\timvf\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos)
       else
          (Printf.fprintf oc "%d\tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
          (if l <> 0 then
             Printf.fprintf oc "%d\taddi\tx31, x31, %d\t\t! %d\n"(pcincr()) l pos);
-            Printf.fprintf oc "%d\timvf\tx31, %s\t\t! %d\n" (pcincr()) (reg x) pos )
+            Printf.fprintf oc "%d\timvf\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos )
   | NonTail(x), SetL(Id.L(y)) ->
       (*let s = load_label pos x y in
       Printf.fprintf oc "%s" s*)()

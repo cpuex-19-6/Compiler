@@ -12,5 +12,6 @@ min-caml.top
 *.bin
 *.log
 raytrace.ml
+test.ml
 
 .DS_Store
