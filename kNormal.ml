@@ -249,3 +249,48 @@ let rec g env (pos, ebody) =
                 (fun z -> (pos, Put(x, y, z)), Type.Unit)))   
 
 let f (pos, e) = fst (g M.empty (pos, e))
+
+let rec print_normal outchan t n = match t with
+  | Unit -> print_space outchan n;Printf.fprintf outchan "%s" "UNIT\n"
+  | Int(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("INT  "^(string_of_int x)^"\n")
+  | Float(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("FLOAT  "^(string_of_float x)^"\n")
+  | Neg(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("NEG  ");Printf.fprintf outchan "%s\n" x
+  | Add(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("ADD\n");print_id outchan x (n+2);print_id outchan y (n+2)
+  | Sub(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("SUB\n");print_id outchan x (n+2);print_id outchan y (n+2)
+  | FNeg(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("FNEG\n");Printf.fprintf outchan "%s\n" x
+  | FAbs(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("FABS\n");Printf.fprintf outchan "%s\n" x
+  | FSqrt(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("FSQRT\n");Printf.fprintf outchan "%s\n" x
+  | FFloor(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("FLOOR\n");Printf.fprintf outchan "%s\n" x
+  | ItoF(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("ITOF\n");Printf.fprintf outchan "%s\n" x
+  | FtoI(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("FTOI\n");Printf.fprintf outchan "%s\n" x
+  | FAdd(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("FADD\n");print_id outchan x (n+2);print_id outchan y (n+2)
+  | FSub(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("FSUB\n");print_id outchan x (n+2);print_id outchan y (n+2)
+  | FMul(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("FMUL\n");print_id outchan x (n+2);print_id outchan y (n+2)
+  | FDiv(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("FDIV\n");print_id outchan x (n+2);print_id outchan y (n+2)
+  | FEq(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("FEq\n");print_id outchan x (n+2);print_id outchan y (n+2)
+  | FLT(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("FLT\n");print_id outchan x (n+2);print_id outchan y (n+2)
+  | IfEq(x,y,(_,a),(_,b)) -> print_space outchan n;Printf.fprintf outchan "%s" ("IFEQ\n");print_id outchan x (n+2);print_id outchan y (n+2);print_normal outchan a (n+2);print_normal outchan b (n+2)
+  | IfLE(x,y,(_,a),(_,b)) -> print_space outchan n;Printf.fprintf outchan "%s" ("IFLE\n");print_id outchan x (n+2);print_id outchan y (n+2);print_normal outchan a (n+2);print_normal outchan b (n+2)
+  | Let(x,(_,y),(_,z)) -> print_space outchan n;Printf.fprintf outchan "%s" ("LET\n");print_idtype outchan x (n+2);print_normal outchan y (n+2);print_normal outchan z (n+2)
+  | Var(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("VAR  ");Printf.fprintf outchan "%s\n" x
+  | LetRec(x,(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "LETREC\n";print_idtype outchan x.name (n+2);print_itlist outchan x.args (n+2);print_normal outchan (snd(x.body)) (n+2);print_normal outchan y (n+2)
+  | App(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("APP\n");print_id outchan x (n+2);print_idlist outchan y (n+2)
+  | Tuple(x) -> print_space outchan n;Printf.fprintf outchan "%s" "Tuple\n";print_idlist outchan x (n+2)
+  | LetTuple(x,y,(_,z)) -> print_space outchan n;Printf.fprintf outchan "%s" "LETTUPLE\n";print_itlist outchan x (n+2);print_id outchan y (n+2);print_normal outchan z (n+2)
+  | Get(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("GET\n");print_id outchan x (n+2);print_id outchan y (n+2)
+  | Put(x,y,z) -> print_space outchan n;Printf.fprintf outchan "%s" ("PUT\n");print_id outchan x (n+2);print_id outchan y (n+2);print_id outchan z (n+2)
+  | ExtArray(x) -> print_space outchan n;Printf.fprintf outchan "%s" ("EXTARRAY\n");print_id outchan x (n+2)
+  | ExtFunApp(x,y) -> print_space outchan n;Printf.fprintf outchan "%s" ("PUT\n");print_id outchan x (n+2);print_idlist outchan y (n+2)
+  | _ -> Printf.fprintf outchan "%s" "a"
+  and print_id outchan x n = print_space outchan n;Printf.fprintf outchan "%s\n" x
+  and print_idlist outchan t n = match t with
+   |[] -> ()
+   |x::xs -> print_id outchan x n; print_idlist outchan xs n
+  and print_idtype outchan t n = match t with
+   |(a,b) -> Type.print_type outchan b n;Printf.fprintf outchan "  %s\n" a
+  and print_itlist outchan t n = match t with
+   |[] -> ()
+   |x::xs -> print_idtype outchan x n;print_itlist outchan xs n
+  and
+    print_space outchan n = if n = 0 then () else (Printf.fprintf outchan  " %s" "";print_space outchan (n-1))
+

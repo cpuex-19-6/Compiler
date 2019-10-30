@@ -1,1 +1,0 @@
-let a = print_int 124 in ()

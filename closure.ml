@@ -77,7 +77,6 @@ let rec g env known (pos, ebody) =
   | KNormal.ItoF(x) -> ItoF(x)
   | KNormal.FtoI(x) -> FtoI(x)
   | KNormal.FSqrt(x) -> FSqrt(x)
-  | KNormal.FFloor(x) -> FFloor(x)
   | KNormal.FEq(x, y) -> FEq(x, y)
   | KNormal.FLT(x, y) -> FLT(x, y)
   | KNormal.Read -> Read

@@ -73,13 +73,14 @@ letrec "pi_div" ["e";"x"] (pi_div (var "e") (var "x")) @@
 letrec "pi4div" ["x"] (pi4div (var "x")) @@
 letrec "tailor_cos" ["e"] (tailor_cos (var "e")) @@
 lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
-(var "b") *! (app (var "tailor_cos") [var "a"])
+letfloat "ans" ((var "b") *! (app (var "tailor_cos") [var "a"])) @@ var "ans"
+(*(app (var "tailor_cos") [var "a"])*)
 
 let sin e =
   letfloat "x" e @@
   letint "n" (ftoi (var "x" /! pi)) @@
   (float 1. -! itof (var "n" &! 1) *! float 2.) *!
-    cos (var "x" -! itof (var "n") *! pi -! pi /! float 2.)
+    (cos (var "x" -! itof (var "n") *! pi -! pi /! float 2.))
 
 let tailor_tan e =
   letfloat "x" e @@
@@ -191,9 +192,8 @@ main:
 | LET IDENT EQUAL exp main
     %prec prec_let
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Let(addtyp $2, $4, $5) }
-| LET IDENT EQUAL exp exp
-    %prec prec_let
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Let(addtyp $2, $4, $5) }
+| exp
+    { $1 }
 
 simple_exp: /* (* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) *) */
 | LPAREN exp RPAREN

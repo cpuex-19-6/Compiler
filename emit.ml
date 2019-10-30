@@ -91,16 +91,16 @@ and g' oc pos e =
   | NonTail(x), FLi(d) ->
       (*let s = load_label pos (reg reg_tmp) l in
       Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\t\t! %d\n"(pcincr()) s (reg x) (reg reg_tmp) pos;*)
-      let u = Int32.to_int(get_upper d) in
+      let u = Int32.to_int(get_upper d) * 4096 in
       let l = Int32.to_int(get_lower d) in
       if u = 0 then 
         (Printf.fprintf oc "%d\taddi\tx31, x0, %d\t\t! %d\n" (pcincr())  l pos;
-        Printf.fprintf oc "%d\tfmvi\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos)
+        Printf.fprintf oc "%d\timvf\tx31, %s\t\t! %d\n" (pcincr()) (reg x) pos)
       else
          (Printf.fprintf oc "%d\tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
          (if l <> 0 then
             Printf.fprintf oc "%d\taddi\tx31, x31, %d\t\t! %d\n"(pcincr()) l pos);
-            Printf.fprintf oc "%d\tfmvi %s, x31\t\t! %d\n" (pcincr()) (reg x) pos )
+            Printf.fprintf oc "%d\timvf\tx31, %s\t\t! %d\n" (pcincr()) (reg x) pos )
   | NonTail(x), SetL(Id.L(y)) ->
       (*let s = load_label pos x y in
       Printf.fprintf oc "%s" s*)()
@@ -567,7 +567,7 @@ let f oc (Prog(data, fundefs, e)) =
   temp_counter := !counter;
   List.iter (fun fundef -> i oc fundef) fundefs;
   Printf.fprintf oc "# jump to main entry point\n";
-  Printf.fprintf oc "0 \tjalr\tx0, x1, %d\n" (!jpc);
+  Printf.fprintf oc "0 \tjal\tx0, %d\n" (!jpc);
   k oc (NonTail("_R_0"), e);
   pc := 4;
   jpc := 4;

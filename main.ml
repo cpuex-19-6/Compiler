@@ -44,6 +44,15 @@ let file2 f =
     close_out outchan;
   with e -> (close_in inchan; close_out outchan; raise e)
 
+let file3 f =   
+  let inchan = open_in (f ^ ".ml") in
+  let outchan = open_out (f ^ "-2.log") in
+    try
+      KNormal.print_normal outchan (snd(iter !limit(Alpha.f(KNormal.f(Typing.f(Parser.prog Lexer.token (Lexing.from_channel inchan))))))) 0;
+      close_in inchan;
+      close_out outchan;
+    with e -> (close_in inchan; close_out outchan; raise e) 
+
 let () = (* ここからコンパイラの実行が開始される (caml2html: main_entry) *)
   let files = ref [] in
   Arg.parse
@@ -53,5 +62,5 @@ let () = (* ここからコンパイラの実行が開始される (caml2html: main_entry) *)
     ("Mitou Min-Caml Compiler (C) Eijiro Sumii\n" ^
      Printf.sprintf "usage: %s [-inline m] [-iter n] ...filenames without \".ml\"..." Sys.argv.(0));
   List.iter
-    (fun f -> ignore (file2 f);ignore(file f))
+    (fun f -> ignore (file2 f);ignore(file f);ignore(file3 f))
     !files
