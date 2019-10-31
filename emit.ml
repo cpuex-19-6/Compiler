@@ -128,18 +128,20 @@ and g' oc pos e =
   | NonTail(x), Div(y, V(z)) -> Printf.fprintf oc "%d\tdiv\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Rem(y, z) -> Printf.fprintf oc "%d\trem\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Array(y, z) -> (Printf.fprintf oc "%d\taddi\tx30, x3, 0\t\t! %d\n" (pcincr()) pos;
-                               Printf.fprintf oc "%d\taddi\tx31, x3, %s\t\t! %d\n" (pcincr()) (reg y) pos;
-                               Printf.fprintf oc "%d\tbeq\tx31, x3, 16\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tadd\tx31, x0, %s\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\tbeq\tx31, x0, 20\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg y) pos;
-                               Printf.fprintf oc "%d\taddi\tx3, x3, 4\t\t! %d\n" (pcincr()) pos;
-                               Printf.fprintf oc "%d\tjal\tx0, -12\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\taddi\tx3, x3, 4\t\t! %d\n" (pcincr()) pos;(*hp += 4*)
+                               Printf.fprintf oc "%d\taddi\tx31, x31, -1\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tjal\tx0, -16\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\taddi\t%s, x30, 0\t\t! %d\n" (pcincr()) (reg x) pos)
   | NonTail(x), FArray(y, z) -> Printf.fprintf oc "%d\taddi\tx30, x3, 0\t\t! %d\n" (pcincr()) pos;
-                               Printf.fprintf oc "%d\taddi\tx31, x3, %s\t\t! %d\n" (pcincr()) (reg y) pos;
-                               Printf.fprintf oc "%d\tbeq\tx31, x3, 16\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tadd\tx31, x3, %s\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\tbeq\tx31, x3, 20\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tfsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg y) pos;
                                Printf.fprintf oc "%d\taddi\tx3, x3, 4\t\t! %d\n" (pcincr()) pos;
-                               Printf.fprintf oc "%d\tjal\tx0, -12\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\taddi\tx31, x31, -1\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tjal\tx0, -16\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\taddi\t%s, x30, 0\t\t! %d\n" (pcincr()) (reg x) pos
   | NonTail(x), Slw(y, V(z)) -> Printf.fprintf oc "%d\tsll\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos(* TODO: RISC-V *)
   | NonTail(x), Slw(y, C(z)) -> Printf.fprintf oc "%d\tslli\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos (* TODO: RISC-V *)
@@ -391,8 +393,8 @@ let rec k oc = function
     | NonTail(x), Sub(y, C(z)) -> jpincr()
     | NonTail(x), Div(y, z) -> jpincr()
     | NonTail(x), Rem(y, z) -> jpincr()
-    | NonTail(x), Array(y, z) -> jpc := !jpc + 28;
-    | NonTail(x), FArray(y, z) -> jpc := !jpc + 28;
+    | NonTail(x), Array(y, z) -> jpc := !jpc + 32;
+    | NonTail(x), FArray(y, z) -> jpc := !jpc + 32;
     | NonTail(x), Slw(y, V(z)) -> jpincr()
     | NonTail(x), Slw(y, C(z)) -> jpincr()
     | NonTail(x), Sra(y, C(z)) -> jpincr()

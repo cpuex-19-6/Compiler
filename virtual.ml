@@ -27,7 +27,7 @@ let expand xts ini addf addi =
     ini
     (fun (offset, acc) x ->
       let offset = align offset in
-      (offset + 4, addf x offset acc))
+      (offset + 8, addf x offset acc))
     (fun (offset, acc) x t ->
       (offset + 4, addi x t offset acc))
 
@@ -115,7 +115,7 @@ let rec g env (pos, ebody) =
       let (offset, store) =
         expand
           (List.map (fun x -> (x, M.find x env)) xs)
-          (pos, Ans(pos, Mr(y)))
+          (0, Ans(pos, Mr(y)))
           (fun x offset store -> seq(pos, Stfd(x, y, C(offset)), store))
           (fun x _ offset store -> seq(pos, Stw(x, y, C(offset)), store))  in
       Let(pos, (y, Type.Tuple(List.map (fun x -> M.find x env) xs)), Mr(reg_hp),
@@ -126,7 +126,7 @@ let rec g env (pos, ebody) =
       let (offset, load) =
         expand
           xts
-          (pos, g (M.add_list xts env) e2)
+          (0, g (M.add_list xts env) e2)
           (fun x offset load ->
             if not (S.mem x s) then load else (* [XX] a little ad hoc optimization *)
             fletd(pos, x, Lfd(y, C(offset)), load))

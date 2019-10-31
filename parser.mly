@@ -4,6 +4,7 @@ open Syntax
 let addtyp x = (x, Type.gentyp ())
 
 let start_pos = Parsing.symbol_start_pos ()
+let letvar x e1 e2 = 0,Let(addtyp x, e1, e2)
 let letfloat x e1 e2 = 0,Let((x, Type.Float), e1, e2)
 let letint x e1 e2 = 0,Let((x, Type.Int), e1,e2)
 let letrec ident formal_args body e = 0, LetRec({name = addtyp ident; args = List.map addtyp formal_args; body = body},e)
@@ -54,33 +55,50 @@ iff (((fless (float 0.) e)) &&! (nott (fless x e))) (app (var "pi_div") [(e-!(x/
 
 let pi4div x = 
 iff (fless x (pi/!float(2.))) (tuple [x;(float 1.)]) @@
-iff (fless x pi) (tuple [pi-!x;float (-1.)]) @@
-iff (fless x (pi*!float(1.5))) (tuple[x-!pi;float (-1.)]) @@
+iff (fless x pi) (tuple [(pi-!x);(0, FNeg(float (1.)))]) @@
+iff (fless x (pi*!float(1.5))) (tuple[(x-!pi);(0,FNeg(float (1.)))]) @@
 tuple [(pi*!float(2.))-!x;float 1.]
    
 let tailor_cos e =
-  letfloat "x" e @@
-  letfloat "xx" (var "x" *! var "x") @@
-  letfloat "t2" (var "xx" /! float 2.) @@
-  letfloat "t4" (var "t2" *! var "xx" /! float 12.) @@
-  letfloat "t6" (var "t4" *! var "xx" /! float 30.) @@
-  letfloat "t8" (var "t6" *! var "xx" /! float 56.) @@
-  letfloat "t10" (var "t8" *! var "xx" /! float 90.) @@
+  letvar "x" e @@
+  letvar "xx" (var "x" *! var "x") @@
+  letvar "t2" (var "xx" /! float 2.) @@
+  letvar "t4" (var "t2" *! var "xx" /! float 12.) @@
+  letvar "t6" (var "t4" *! var "xx" /! float 30.) @@
+  letvar "t8" (var "t6" *! var "xx" /! float 56.) @@
+  letvar "t10" (var "t8" *! var "xx" /! float 90.) @@
   float 1. -! var "t2" +! var "t4" -! var "t6" +! var "t8" -! var "t10"
+
+let tailor_sin e = 
+  letvar "x" e @@
+  letvar "xx" (var "x" *! var "x") @@
+  letvar "t3" (var "x" *! var "xx" /! float 6.) @@
+  letvar "t5" (var "xx" *! var "t3" /! float 20.) @@
+  letvar "t7" (var "xx" *! var "t5" /! float 42.) @@
+  letvar "t9" (var "xx" *! var "t7" /! float 72.) @@
+  letvar "t11" (var "xx" *! var "t9" /! float 110.) @@
+  var "x" -! var "t3" +! var "t5" -! var "t7" +! var "t9" -! var "t11"
 
 let cos e = 
 letrec "pi_div" ["e";"x"] (pi_div (var "e") (var "x")) @@
 letrec "pi4div" ["x"] (pi4div (var "x")) @@
 letrec "tailor_cos" ["e"] (tailor_cos (var "e")) @@
 lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
-letfloat "ans" ((var "b") *! (app (var "tailor_cos") [var "a"])) @@ var "ans"
-(*(app (var "tailor_cos") [var "a"])*)
+(var "b")  *! (app (var "tailor_cos") [var "a"])
 
-let sin e =
-  letfloat "x" e @@
-  letint "n" (ftoi (var "x" /! pi)) @@
-  (float 1. -! itof (var "n" &! 1) *! float 2.) *!
-    (cos (var "x" -! itof (var "n") *! pi -! pi /! float 2.))
+(*let sin e =
+  letvar "x" e @@
+  letvar "n" (ftoi (var "x" /! pi)) @@
+  letvar "s" (float 1. -! itof (var "n" &! 1) *! float 2.) @@
+   (var "s") *! (cos (var "x" -! itof (var "n") *! pi -! pi /! float 2.))*)
+
+let sin e = 
+letrec "pi_div" ["e";"x"] (pi_div (var "e") (var "x")) @@
+letrec "pi4div" ["x"] (pi4div (var "x")) @@
+letrec "tailor_sin" ["e"] (tailor_sin (var "e")) @@
+lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
+(var "b")  *! (app (var "tailor_sin") [var "a"])
+
 
 let tailor_tan e =
   letfloat "x" e @@
@@ -108,11 +126,7 @@ let tailor_atan e =
   float 1.10714872 +! var "t1" -! var "t2" +! var "t3" -! var "t4" +! var "t5"
 
 let atan e = 
-letrec "pi_div" ["e";"x"] (pi_div (var "e") (var "x")) @@
-letrec "pi4div" ["x"] (pi4div (var "x")) @@
-letrec "tailor_atan" ["e"] (tailor_tan (var "e")) @@
-lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
-(var "b") *! (app (var "tailor_atan") [var "a"])
+ (tailor_atan e)
 
 let xor x y = 
 Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
