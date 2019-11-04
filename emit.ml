@@ -120,7 +120,7 @@ and g' oc pos e =
   (*Read, FRead, Write *)
   | NonTail(x), Read -> Printf.fprintf oc "%d\tinw\t%s\t\t! %d\n" (pcincr()) (reg x) pos
   | NonTail(x), FRead -> Printf.fprintf oc "%d\tinf\t%s\t\t! %d\n" (pcincr()) (reg x) pos
-  | NonTail(x), Write(y) -> Printf.fprintf oc "%d\toutw\t%s\t\t! %d\n" (pcincr()) (reg y) pos
+  | NonTail(x), Write(y) -> Printf.fprintf oc "%d\toutb\t%s\t\t! %d\n" (pcincr()) (reg y) pos
   | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc "%d\tadd\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
   | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "%d\tsub\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos

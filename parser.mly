@@ -172,7 +172,7 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %token OR
 %token XOR
 %token FISZERO FLESS FISPOS FISNEG
-%token FNEG FABS FHALF FSQR FLOOR FLOATOFINT INTOFFLOAT SQRT COS SIN TAN ATAN
+%token FNEG FABS FHALF FSQR FLOOR FLOATOFINT INTOFFLOAT SQRT COS SIN ATAN
 %token READINT READFLOAT PRINTINT PRINTCHAR
 
 /* (* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) *) */
