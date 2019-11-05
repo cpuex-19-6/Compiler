@@ -14,4 +14,8 @@ min-caml.top
 raytrace.ml
 test.ml
 
+lexer.ml
+parser.ml
+parser.mli
+
 .DS_Store
