@@ -140,7 +140,7 @@ let rec g env (pos, ebody) =
       (fun x -> (pos,ItoF(x)), Type.Float)
   | Syntax.FtoI(e) ->
       insert_let (g env e)
-      (fun x -> (pos,FtoI(x)), Type.Float)
+      (fun x -> (pos,FtoI(x)), Type.Int)
   | Syntax.FSqrt(e) ->
       insert_let (g env e)
       (fun x -> (pos,FSqrt(x)), Type.Float)

@@ -130,7 +130,7 @@ and g' oc pos e =
   | NonTail(x), Array(y, z) -> (Printf.fprintf oc "%d\taddi\tx30, x3, 0\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tadd\tx31, x0, %s\t\t! %d\n" (pcincr()) (reg y) pos;
                                Printf.fprintf oc "%d\tbeq\tx31, x0, 20\t\t! %d\n" (pcincr()) pos;
-                               Printf.fprintf oc "%d\tsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\tsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg z) pos;
                                Printf.fprintf oc "%d\taddi\tx3, x3, 4\t\t! %d\n" (pcincr()) pos;(*hp += 4*)
                                Printf.fprintf oc "%d\taddi\tx31, x31, -1\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tjal\tx0, -16\t\t! %d\n" (pcincr()) pos;
@@ -138,7 +138,7 @@ and g' oc pos e =
   | NonTail(x), FArray(y, z) -> Printf.fprintf oc "%d\taddi\tx30, x3, 0\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tadd\tx31, x3, %s\t\t! %d\n" (pcincr()) (reg y) pos;
                                Printf.fprintf oc "%d\tbeq\tx31, x3, 20\t\t! %d\n" (pcincr()) pos;
-                               Printf.fprintf oc "%d\tfsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\tfsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg z) pos;
                                Printf.fprintf oc "%d\taddi\tx3, x3, 4\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\taddi\tx31, x31, -1\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tjal\tx0, -16\t\t! %d\n" (pcincr()) pos;

@@ -52,7 +52,6 @@ type token =
   | SQRT
   | COS
   | SIN
-  | TAN
   | ATAN
   | READINT
   | READFLOAT
