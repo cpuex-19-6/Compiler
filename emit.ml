@@ -255,8 +255,8 @@ and g' oc pos e =
       Printf.fprintf oc "%d\tlw\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_cl) pos;
       Printf.fprintf oc "%d\tjalr\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
-      Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_sp) (-(ss - 4)) pos;
-      Printf.fprintf oc "%d\tjalr\tx0, %s, 0\t\t! %d\n" (pcincr())  (reg reg_tmp) pos
+      Printf.fprintf oc "%d\tlw\tx1, %s, %d\t\t! %d\n" (pcincr())  (reg reg_sp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr())  pos
       (*if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
       else if List.mem a allfregs && a <> fregs.(0) then
@@ -284,8 +284,8 @@ and g' oc pos e =
         Printf.fprintf oc "%d\tjal\tx1, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
       );
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
-      Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_sp) (-(ss - 4)) pos;
-      Printf.fprintf oc "%d\tjalr\tx0, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos
+      Printf.fprintf oc "%d\tlw\tx1, %s, %d\t\t! %d\n" (pcincr())  (reg reg_sp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr())  pos
       (*if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
       else if List.mem a allfregs && a <> fregs.(0) then
