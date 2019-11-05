@@ -120,7 +120,7 @@ and g' oc pos e =
   (*Read, FRead, Write *)
   | NonTail(x), Read -> Printf.fprintf oc "%d\tinw\t%s\t\t! %d\n" (pcincr()) (reg x) pos
   | NonTail(x), FRead -> Printf.fprintf oc "%d\tinf\t%s\t\t! %d\n" (pcincr()) (reg x) pos
-  | NonTail(x), Write(y) -> Printf.fprintf oc "%d\toutw\t%s\t\t! %d\n" (pcincr()) (reg y) pos
+  | NonTail(x), Write(y) -> Printf.fprintf oc "%d\toutb\t%s\t\t! %d\n" (pcincr()) (reg y) pos
   | NonTail(x), Add(y, V(z)) -> Printf.fprintf oc "%d\tadd\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Add(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
   | NonTail(x), Sub(y, V(z)) -> Printf.fprintf oc "%d\tsub\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
@@ -202,7 +202,7 @@ and g' oc pos e =
       | [i] -> g' oc pos (NonTail(regs.(0)), exp)
       | [i; j] when i + 1 = j -> g' oc pos (NonTail(fregs.(0)), exp)
       | _ -> assert false);
-      Printf.fprintf oc "%d \tblr\t\t! %d\n" (pcincr()) pos;
+      Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
   | Tail, IfEq(x, V(y), e1, e2) ->
       g'_tail_if oc pos e1 e2 "beq" "bne" x y 
   | Tail, IfEq(x, C(y), e1, e2) ->
@@ -243,17 +243,55 @@ and g' oc pos e =
       g'_non_tail_if oc pos (NonTail(z)) e1 e2 "bge" "blt" y x
   (* 関数呼び出しの仮想命令の実装 (caml2html: emit_call) *)
   | Tail, CallCls(x, ys, zs) -> (* 末尾呼び出し (caml2html: emit_tailcall) *)
-      g'_args oc pos [(x, reg_cl)] ys zs;
+      (*g'_args oc pos [(x, reg_cl)] ys zs;
       Printf.fprintf oc "%d\tlw\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg reg_sw) (reg reg_cl) pos;
-      Printf.fprintf oc "%d\tjalr\tx0, %s, 0\t\t! %d\n" (pcincr()) (reg reg_sw) pos;
+      Printf.fprintf oc "%d\tjalr\tx0, %s, 0\t\t! %d\n" (pcincr()) (reg reg_sw) pos;*)
+      let a = "%x4" in
+      Printf.fprintf oc "%d\taddi\t%s, x1, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
+      g'_args oc pos [(x, reg_cl)] ys zs;
+      let ss = stacksize () in
+      Printf.fprintf oc "%d\tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_tmp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) (-ss) pos;
+      Printf.fprintf oc "%d\tlw\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_cl) pos;
+      Printf.fprintf oc "%d\tjalr\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
+      Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_sp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\tjalr\tx0, %s, 0\t\t! %d\n" (pcincr())  (reg reg_tmp) pos
+      (*if List.mem a allregs && a <> regs.(0) then
+        Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
+      else if List.mem a allfregs && a <> fregs.(0) then
+        Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
+      Printf.fprintf oc "%d\taddi\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos*)
+      
   | Tail, CallDir(Id.L(x), ys, zs) -> (* 末尾呼び出し *)
-      g'_args oc pos [] ys zs;
+      (*g'_args oc pos [] ys zs;
       (try
         Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list x) - (!pc)) pos;
       with Not_found ->
         Printf.printf "LABEL %s NOT FOUND\n" x;
         Printf.fprintf oc "%d\tjal\tx0, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
-      )
+      )*)
+      let a = "%x4" in
+      Printf.fprintf oc "%d\taddi\t%s, x1, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
+      g'_args oc pos [] ys zs;
+      let ss = stacksize () in
+      Printf.fprintf oc "%d\tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_tmp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) (-ss) pos;
+      (try
+        Printf.fprintf oc "%d\tjal\tx1, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list x) - (!pc)) pos;
+      with Not_found ->
+        Printf.printf "LABEL %s NOT FOUND\n" x;
+        Printf.fprintf oc "%d\tjal\tx1, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
+      );
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
+      Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_sp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\tjalr\tx0, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos
+      (*if List.mem a allregs && a <> regs.(0) then
+        Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
+      else if List.mem a allfregs && a <> fregs.(0) then
+        Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
+      Printf.fprintf oc "%d\taddi\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos*)
+      
   | NonTail(a), CallCls(x, ys, zs) ->
       Printf.fprintf oc "%d\taddi\t%s, x1, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       g'_args oc pos [(x, reg_cl)] ys zs;
@@ -480,11 +518,25 @@ let rec k oc = function
     | NonTail(z), IfFLE(x, y, e1, e2) ->
         k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
     | Tail, CallCls(x, ys, zs) -> 
-        k'_args oc [(x, reg_cl)] ys zs;
-        jpincr();jpincr()
+    let a = "%x4" in
+    jpincr();
+    k'_args oc [(x, reg_cl)] ys zs;
+    let _ = stacksize () in
+    jpc := !jpc + 28;
+    (*if List.mem a allregs && a <> regs.(0) then
+      jpincr()
+    else if List.mem a allfregs && a <> fregs.(0) then
+      jpincr();jpincr()*)
     | Tail, CallDir(Id.L(x), ys, zs) ->
-        k'_args oc [] ys zs;
-        jpincr()
+    let a = "%x4" in
+    jpincr();
+    k'_args oc [] ys zs;
+    let _ = stacksize () in
+    jpc := !jpc + 24;
+    (*if List.mem a allregs && a <> regs.(0) then
+      jpincr()
+    else if List.mem a allfregs && a <> fregs.(0) then
+      jpincr();jpincr()*)
     | NonTail(a), CallCls(x, ys, zs) ->
         jpincr();
         k'_args oc [(x, reg_cl)] ys zs;
