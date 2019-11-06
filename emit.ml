@@ -202,7 +202,7 @@ and g' oc pos e =
       | [i] -> g' oc pos (NonTail(regs.(0)), exp)
       | [i; j] when i + 1 = j -> g' oc pos (NonTail(fregs.(0)), exp)
       | _ -> assert false);
-      Printf.fprintf oc "%d \tblr\t\t! %d\n" (pcincr()) pos;
+      Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
   | Tail, IfEq(x, V(y), e1, e2) ->
       g'_tail_if oc pos e1 e2 "beq" "bne" x y 
   | Tail, IfEq(x, C(y), e1, e2) ->
@@ -219,9 +219,9 @@ and g' oc pos e =
       Printf.fprintf oc "%d\taddi\t%s, x0, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) y pos;
       g'_tail_if oc pos e1 e2 "bge" "blt" x reg_tmp
   | Tail, IfFEq(x, y, e1, e2) ->
-      g'_tail_if oc pos e1 e2 "beq" "bne" x y
+      g'_tail_fif oc pos e1 e2 "feq" "fne" x y
   | Tail, IfFLE(x, y, e1, e2) ->
-      g'_tail_if oc pos e1 e2 "bge" "blt" y x
+      g'_tail_fif oc pos e1 e2 "fle" "fgt" x y
   | NonTail(z), IfEq(x, V(y), e1, e2) ->
       g'_non_tail_if oc pos (NonTail(z)) e1 e2 "beq" "bne" x y
   | NonTail(z), IfEq(x, C(y), e1, e2) ->
@@ -238,9 +238,9 @@ and g' oc pos e =
       Printf.fprintf oc "%d\taddi\t%s, x0, y\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       g'_non_tail_if oc pos (NonTail(z)) e1 e2 "bge" "blt" x reg_tmp
   | NonTail(z), IfFEq(x, y, e1, e2) ->
-      g'_non_tail_if oc pos (NonTail(z)) e1 e2 "beq" "bne" x y
+      g'_non_tail_fif oc pos (NonTail(z)) e1 e2 "feq" "fne" x y
   | NonTail(z), IfFLE(x, y, e1, e2) ->
-      g'_non_tail_if oc pos (NonTail(z)) e1 e2 "bge" "blt" y x
+      g'_non_tail_fif oc pos (NonTail(z)) e1 e2 "fle" "fgt" x y
   (* 関数呼び出しの仮想命令の実装 (caml2html: emit_call) *)
   | Tail, CallCls(x, ys, zs) -> (* 末尾呼び出し (caml2html: emit_tailcall) *)
       g'_args oc pos [(x, reg_cl)] ys zs;
@@ -306,6 +306,47 @@ and g'_non_tail_if oc pos dest e1 e2 b bn x y=
   let b_cont = Id.genid (b ^ "_cont") in
   (try
     Printf.fprintf oc "%d\t%s\t%s, %s, %d\t\t! %d\n" (pcincr()) bn (reg x) (reg y) ((Hashtbl.find address_list b_else) - (!pc)) pos;
+  with Not_found ->
+    Printf.printf "LABEL %s NOT FOUND\n" b_else;
+    Printf.fprintf oc "%d\t%s\t%s, %s, NOT FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
+  );
+  let stackset_back = !stackset in
+  g oc (dest, e1);
+  let stackset1 = !stackset in
+  (try
+    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc)) pos; (* ここ - (!pc) + 4 かも *)
+  with Not_found ->
+    Printf.printf "LABEL %s NOT FOUND\n" b_cont;
+    Printf.fprintf oc "%d\tjal\tx0, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
+  );
+  Printf.fprintf oc "# %s:\n" b_else;
+  stackset := stackset_back;
+  g oc (dest, e2);
+  Printf.fprintf oc "# %s:\n" b_cont;
+  let stackset2 = !stackset in
+  stackset := S.inter stackset1 stackset2
+and g'_tail_fif oc pos e1 e2 b bn x y =
+  let b_else = Id.genid (b ^ "_else") in
+  (try
+    Printf.fprintf oc "%d\t%s\tx31, %s, %s\t\t! %d\n" (pcincr()) b (reg x) (reg y)  pos;
+    Printf.fprintf oc "%d\taddi\tx30, x0, 0\t\t! %d\n" (pcincr()) pos;
+    Printf.fprintf oc "%d\tbeq\tx31, x30, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_else) - (!pc)) pos;
+  with Not_found ->
+    Printf.printf "LABEL %s NOT FOUND!\n" b_else;
+    Printf.fprintf oc "%d\t%s \t%s, %s, NOT_FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
+  );
+  let stackset_back = !stackset in
+  g oc (Tail, e1);
+  Printf.fprintf oc "# %s:\n" b_else;
+  stackset := stackset_back;
+  g oc (Tail, e2)
+and g'_non_tail_fif oc pos dest e1 e2 b bn x y=
+  let b_else = Id.genid (b ^ "_else") in
+  let b_cont = Id.genid (b ^ "_cont") in
+  (try
+  Printf.fprintf oc "%d\t%s\tx31, %s, %s\t\t! %d\n" (pcincr()) b (reg x) (reg y)  pos;
+  Printf.fprintf oc "%d\taddi\tx30, x0, 0\t\t! %d\n" (pcincr()) pos;
+  Printf.fprintf oc "%d\tbeq\tx31, x30, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_else) - (!pc)) pos;
   with Not_found ->
     Printf.printf "LABEL %s NOT FOUND\n" b_else;
     Printf.fprintf oc "%d\t%s\t%s, %s, NOT FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
@@ -457,9 +498,9 @@ let rec k oc = function
         jpincr();
         k'_tail_if oc e1 e2 "bge" "blt" x reg_tmp
     | Tail, IfFEq(x, y, e1, e2) ->
-        k'_tail_if oc e1 e2 "beq" "bne" x y
+        k'_tail_fif oc e1 e2 "feq" "fne" x y
     | Tail, IfFLE(x, y, e1, e2) ->
-        k'_tail_if oc e1 e2 "bge" "blt" y x
+        k'_tail_fif oc e1 e2 "fle" "fgt" x y
     | NonTail(z), IfEq(x, V(y), e1, e2) ->
         k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
     | NonTail(z), IfEq(x, C(y), e1, e2) ->
@@ -476,9 +517,9 @@ let rec k oc = function
         jpincr();
         k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" x reg_tmp
     | NonTail(z), IfFEq(x, y, e1, e2) ->
-        k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
+        k'_non_tail_fif oc (NonTail(z)) e1 e2 "feq" "fne" x y
     | NonTail(z), IfFLE(x, y, e1, e2) ->
-        k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" y x
+        k'_non_tail_fif oc (NonTail(z)) e1 e2 "fle" "fgt" x y
     | Tail, CallCls(x, ys, zs) -> 
         k'_args oc [(x, reg_cl)] ys zs;
         jpincr();jpincr()
@@ -528,6 +569,33 @@ let rec k oc = function
     k oc (dest, e2);
     Hashtbl.add address_list b_cont !jpc;
     Printf.printf "address_list に (%s, %d) を追加\n" b_cont !jpc;
+    let stackset2 = !stackset in
+    stackset := S.inter stackset1 stackset2
+    and k'_tail_fif oc e1 e2 b bn x y =
+    let b_else = Id.genid2 (b ^ "_else") in
+    num_genid2 := !num_genid2 + 1;
+    jpincr();jpincr();jpincr();
+    let stackset_back = !stackset in
+    k oc (Tail, e1);
+    Hashtbl.add address_list b_else !jpc;
+    Printf.printf "faddress_list に (%s, %d) を追加\n" b_else !jpc;
+    stackset := stackset_back;
+    k oc (Tail, e2)
+  and k'_non_tail_fif oc dest e1 e2 b bn x y=
+    let b_else = Id.genid2 (b ^ "_else") in
+    let b_cont = Id.genid2 (b ^ "_cont") in
+    num_genid2 := !num_genid2 + 2;
+    jpincr();jpincr();jpincr();
+    let stackset_back = !stackset in
+    k oc (dest, e1);
+    let stackset1 = !stackset in
+    jpincr();
+    Hashtbl.add address_list b_else !jpc;
+    Printf.printf "faddress_list に (%s, %d) を追加\n" b_else !jpc;
+    stackset := stackset_back;
+    k oc (dest, e2);
+    Hashtbl.add address_list b_cont !jpc;
+    Printf.printf "faddress_list に (%s, %d) を追加\n" b_cont !jpc;
     let stackset2 = !stackset in
     stackset := S.inter stackset1 stackset2
   and k'_args oc x_reg_cl ys zs =
