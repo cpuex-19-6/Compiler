@@ -1,8 +1,8 @@
 open Asm
 
 (* for register coalescing *)
-(* [XXX] Call¤¬¤¢¤Ã¤¿¤é¡¢¤½¤³¤«¤éÀè¤ÏÌµ°ÕÌ£¤È¤¤¤¦¤«µÕ¸ú²Ì¤Ê¤Î¤ÇÄÉ¤ï¤Ê¤¤¡£
-         ¤½¤Î¤¿¤á¤Ë¡ÖCall¤¬¤¢¤Ã¤¿¤«¤É¤¦¤«¡×¤òÊÖ¤êÃÍ¤ÎÂè1Í×ÁÇ¤Ë´Þ¤á¤ë¡£ *)
+(* [XXX] Callï¿½ï¿½ï¿½ï¿½ï¿½Ã¤ï¿½ï¿½é¡¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ìµï¿½ï¿½Ì£ï¿½È¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¸ï¿½ï¿½Ì¤Ê¤Î¤ï¿½ï¿½É¤ï¿½Ê¤ï¿½ï¿½ï¿½
+         ï¿½ï¿½ï¿½Î¤ï¿½ï¿½ï¿½Ë¡ï¿½Callï¿½ï¿½ï¿½ï¿½ï¿½Ã¤ï¿½ï¿½ï¿½ï¿½É¤ï¿½ï¿½ï¿½ï¿½×¤ï¿½ï¿½Ö¤ï¿½ï¿½Í¤ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½Ç¤Ë´Þ¤ï¿½ë¡£ *)
 let rec target' src (dest, t) = function
   | Mr(x) when x = src && is_reg dest ->
       assert (t <> Type.Unit);
@@ -36,7 +36,7 @@ and target_args src all n = function (* auxiliary function for Call *)
   | y :: ys when src = y -> all.(n) :: target_args src all (n + 1) ys
   | _ :: ys -> target_args src all (n + 1) ys
 
-type alloc_result = (* alloc¤Ë¤ª¤¤¤Æspilling¤¬¤¢¤Ã¤¿¤«¤É¤¦¤«¤òÉ½¤¹¥Ç¡¼¥¿·¿ *)
+type alloc_result = (* allocï¿½Ë¤ï¿½ï¿½ï¿½ï¿½ï¿½spillingï¿½ï¿½ï¿½ï¿½ï¿½Ã¤ï¿½ï¿½ï¿½ï¿½É¤ï¿½ï¿½ï¿½ï¿½ï¿½É½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ *)
   | Alloc of Id.t (* allocated register *)
   | Spill of Id.t (* spilled variable *)
 let rec alloc dest cont regenv x t =
@@ -52,7 +52,7 @@ let rec alloc dest cont regenv x t =
   let free = fv cont in
   try
     let (c, prefer) = target x dest cont in
-    let live = (* À¸¤­¤Æ¤¤¤ë¥ì¥¸¥¹¥¿ *)
+    let live = (* ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ *)
       List.fold_left
         (fun live y ->
           if is_reg y then S.add y live else
@@ -60,7 +60,7 @@ let rec alloc dest cont regenv x t =
           with Not_found -> live)
         S.empty
         free in
-    let r = (* ¤½¤¦¤Ç¤Ê¤¤¥ì¥¸¥¹¥¿¤òÃµ¤¹ *)
+    let r = (* ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½ *)
       List.find
         (fun r -> not (S.mem r live))
         (prefer @ all) in
@@ -68,7 +68,7 @@ let rec alloc dest cont regenv x t =
     Alloc(r)
   with Not_found ->
     Format.eprintf "register allocation failed for %s@." x;
-    let y = (* ·¿¤Î¹ç¤¦¥ì¥¸¥¹¥¿ÊÑ¿ô¤òÃµ¤¹ *)
+    let y = (* ï¿½ï¿½ï¿½Î¹ç¤¦ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½Ãµï¿½ï¿½ *)
       List.find
         (fun y ->
           not (is_reg y) &&
@@ -94,7 +94,7 @@ let find' x' regenv =
   | V(x) -> V(find x Type.Int regenv)
   | c -> c
 
-let rec g dest cont regenv = function (* Ì¿ÎáÎó¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2html: regalloc_g) *)
+let rec g dest cont regenv = function (* Ì¿ï¿½ï¿½ï¿½ï¿½Î¥ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: regalloc_g) *)
   | Ans(pos, exp) -> g'_and_restore pos dest cont regenv exp
   | Let(pos, ((x, t) as xt), exp, e) ->
       assert (not (M.mem x regenv));
@@ -111,12 +111,12 @@ let rec g dest cont regenv = function (* Ì¿ÎáÎó¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2html: re
       | Alloc(r) ->
           let (e2', regenv2) = g dest cont (add x r regenv1) e in
           (concat pos e1' (r, t) e2', regenv2))
-and g'_and_restore pos dest cont regenv exp = (* »ÈÍÑ¤µ¤ì¤ëÊÑ¿ô¤ò¥¹¥¿¥Ã¥¯¤«¤é¥ì¥¸¥¹¥¿¤ØRestore (caml2html: regalloc_unspill) *)
+and g'_and_restore pos dest cont regenv exp = (* ï¿½ï¿½ï¿½Ñ¤ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½ò¥¹¥ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½ï¿½ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Restore (caml2html: regalloc_unspill) *)
   try g' pos dest cont regenv exp
   with NoReg(x, t) ->
     ((* Format.eprintf "restoring %s@." x; *)
      g dest cont regenv (Let(pos, (x, t), Restore(x), Ans(pos, exp))))
-and g' pos dest cont regenv = function (* ³ÆÌ¿Îá¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2html: regalloc_gprime) *)
+and g' pos dest cont regenv = function (* ï¿½ï¿½Ì¿ï¿½ï¿½Î¥ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: regalloc_gprime) *)
   | Nop | Li _ | SetL _ | Comment _ | Restore _ | FLi _ | Read | FRead as exp -> (Ans(pos, exp), regenv)
   | Mr(x) -> (Ans(pos, Mr(find x Type.Int regenv)), regenv)
   | And(x, y) -> (Ans(pos, And(find x Type.Bool regenv, find y Type.Bool regenv)), regenv)
@@ -137,7 +137,7 @@ and g' pos dest cont regenv = function (* ³ÆÌ¿Îá¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2html: r
   | Div(x, y) -> (Ans(pos, Div(find x Type.Int regenv, find' y regenv)), regenv)
   | Rem(x, y) -> (Ans(pos, Rem(find x Type.Int regenv, find y Type.Int regenv)), regenv)
   | Array(x, y) -> (Ans(pos, Array(find x Type.Int regenv, find y Type.Int regenv)), regenv)
-  | FArray(x, y) -> (Ans(pos, FArray(find x Type.Int regenv, find y Type.Int regenv)), regenv)
+  | FArray(x, y) -> (Ans(pos, FArray(find x Type.Int regenv, find y Type.Float regenv)), regenv)
   | Slw(x, y') -> (Ans(pos, Slw(find x Type.Int regenv, find' y' regenv)), regenv)
   | Sra(x, y') -> (Ans(pos, Sra(find x Type.Int regenv, find' y' regenv)), regenv)
   | Lwz(x, y') -> (Ans(pos, Lwz(find x Type.Int regenv, find' y' regenv)), regenv)
@@ -166,10 +166,10 @@ and g' pos dest cont regenv = function (* ³ÆÌ¿Îá¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2html: r
       else
         g'_call pos dest cont regenv exp (fun ys zs -> CallDir(Id.L(x), ys, zs)) ys zs
   | Save(x, y) -> assert false
-and g'_if pos dest cont regenv exp constr e1 e2 = (* if¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2html: regalloc_if) *)
+and g'_if pos dest cont regenv exp constr e1 e2 = (* ifï¿½Î¥ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: regalloc_if) *)
   let (e1', regenv1) = g dest cont regenv e1 in
   let (e2', regenv2) = g dest cont regenv e2 in
-  let regenv' = (* Î¾Êý¤Ë¶¦ÄÌ¤Î¥ì¥¸¥¹¥¿ÊÑ¿ô¤À¤±ÍøÍÑ *)
+  let regenv' = (* Î¾ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½Ì¤Î¥ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ *)
     List.fold_left
       (fun regenv' x ->
         try
@@ -184,11 +184,11 @@ and g'_if pos dest cont regenv exp constr e1 e2 = (* if¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2
   (List.fold_left
      (fun e x ->
        if x = fst dest || not (M.mem x regenv) || M.mem x regenv' then e else
-       seq(pos, Save(M.find x regenv, x), e)) (* ¤½¤¦¤Ç¤Ê¤¤ÊÑ¿ô¤ÏÊ¬´ôÄ¾Á°¤Ë¥»¡¼¥Ö *)
+       seq(pos, Save(M.find x regenv, x), e)) (* ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½Ê¬ï¿½ï¿½Ä¾ï¿½ï¿½ï¿½Ë¥ï¿½ï¿½ï¿½ï¿½ï¿½ *)
      (Ans(pos, constr e1' e2'))
      (fv cont),
    regenv')
-and g'_call pos dest cont regenv exp constr ys zs = (* ´Ø¿ô¸Æ¤Ó½Ð¤·¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2html: regalloc_call) *)
+and g'_call pos dest cont regenv exp constr ys zs = (* ï¿½Ø¿ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ï¿½Î¥ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: regalloc_call) *)
   (List.fold_left
      (fun e x ->
        if x = fst dest || not (M.mem x regenv) then e else
@@ -199,7 +199,7 @@ and g'_call pos dest cont regenv exp constr ys zs = (* ´Ø¿ô¸Æ¤Ó½Ð¤·¤Î¥ì¥¸¥¹¥¿³ä¤
      (fv cont),
    M.empty)
 
-let h { name = Id.L(x); args = ys; fargs = zs; body = e; ret = t } = (* ´Ø¿ô¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2html: regalloc_h) *)
+let h { name = Id.L(x); args = ys; fargs = zs; body = e; ret = t } = (* ï¿½Ø¿ï¿½ï¿½Î¥ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: regalloc_h) *)
   let pos = match e with
   | Ans(n, _) -> n
   | Let(n, _, _, _) -> n in 
@@ -232,7 +232,7 @@ let h { name = Id.L(x); args = ys; fargs = zs; body = e; ret = t } = (* ´Ø¿ô¤Î¥ì
   let (e', regenv') = g (a, t) (Ans(pos, Mr(a))) regenv e in
   { name = Id.L(x); args = arg_regs; fargs = farg_regs; body = e'; ret = t }
 
-let f (Prog(data, fundefs, e)) = (* ¥×¥í¥°¥é¥àÁ´ÂÎ¤Î¥ì¥¸¥¹¥¿³ä¤êÅö¤Æ (caml2html: regalloc_f) *)
+let f (Prog(data, fundefs, e)) = (* ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¤Î¥ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: regalloc_f) *)
   Format.eprintf "register allocation: may take some time (up to a few minutes, depending on the size of functions)@.";
   let fundefs' = List.map h fundefs in
   let e', regenv' = g (Id.gentmp Type.Unit, Type.Unit) (Ans(0, Nop)) M.empty e in

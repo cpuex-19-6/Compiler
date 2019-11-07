@@ -2,7 +2,7 @@
 
 open Asm
 
-let data = ref [] (* ÉâÆ°¾®¿ôÅÀ¿ô¤ÎÄê¿ô¥Æ¡¼¥Ö¥ë (caml2html: virtual_data) *)
+let data = ref [] (* ï¿½ï¿½Æ°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½ï¿½Ö¥ï¿½ (caml2html: virtual_data) *)
 
 let classify xts ini addf addi =
   List.fold_left
@@ -32,13 +32,13 @@ let expand xts ini addf addi =
       (offset + 4, addi x t offset acc))
 
 let rec g env (pos, ebody) =
-  match ebody with (* ¼°¤Î²¾ÁÛ¥Þ¥·¥ó¥³¡¼¥ÉÀ¸À® (caml2html: virtual_g) *)
+  match ebody with (* ï¿½ï¿½ï¿½Î²ï¿½ï¿½Û¥Þ¥ï¿½ï¿½ó¥³¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: virtual_g) *)
   | Closure.Unit -> Ans(pos, Nop)
   | Closure.Int(i) -> Ans(pos, Li(i))
   | Closure.Float(d) ->
       (*let l =
         try
-          (* ¤¹¤Ç¤ËÄê¿ô¥Æ¡¼¥Ö¥ë¤Ë¤¢¤Ã¤¿¤éºÆÍøÍÑ *)
+          (* ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½ï¿½Ö¥ï¿½Ë¤ï¿½ï¿½Ã¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ *)
           let (l, _) = List.find (fun (_, d') -> d = d') !data in
           l
         with Not_found ->
@@ -89,8 +89,8 @@ let rec g env (pos, ebody) =
       | Type.Unit -> Ans(pos, Nop)
       | Type.Float -> Ans(pos, FMr(x))
       | _ -> Ans(pos, Mr(x)))
-  | Closure.MakeCls((x, t), { Closure.entry = l; Closure.actual_fv = ys }, e2) -> (* ¥¯¥í¡¼¥¸¥ã¤ÎÀ¸À® (caml2html: virtual_makecls) *)
-      (* Closure¤Î¥¢¥É¥ì¥¹¤ò¥»¥Ã¥È¤·¤Æ¤«¤é¡¢¼«Í³ÊÑ¿ô¤ÎÃÍ¤ò¥¹¥È¥¢ *)
+  | Closure.MakeCls((x, t), { Closure.entry = l; Closure.actual_fv = ys }, e2) -> (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: virtual_makecls) *)
+      (* Closureï¿½Î¥ï¿½ï¿½É¥ì¥¹ï¿½ò¥»¥Ã¥È¤ï¿½ï¿½Æ¤ï¿½ï¿½é¡¢ï¿½ï¿½Í³ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½Í¤ò¥¹¥È¥ï¿½ *)
       let e2' = g (M.add x t env) e2 in
       let offset, store_fv =
         expand
@@ -110,7 +110,7 @@ let rec g env (pos, ebody) =
   | Closure.AppDir(Id.L(x), ys) ->
       let (int, float) = separate (List.map (fun y -> (y, M.find y env)) ys) in
       Ans(pos, CallDir(Id.L(x), int, float))
-  | Closure.Tuple(xs) -> (* ÁÈ¤ÎÀ¸À® (caml2html: virtual_tuple) *)
+  | Closure.Tuple(xs) -> (* ï¿½È¤ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: virtual_tuple) *)
       let y = Id.genid "t" in
       let (offset, store) =
         expand
@@ -135,11 +135,11 @@ let rec g env (pos, ebody) =
             Let(pos, (x, t), Lwz(y, C(offset)), load)) in
       load
   | Closure.Array(x, y) ->
-       (match M.find x env with
-       | Type.Array(Type.Unit) -> Ans(pos, Nop)
-       | Type.Array(Type.Float) -> Ans(pos, FArray(x, y))
+       (match M.find y env with
+       | Type.Unit -> Ans(pos, Nop)
+       | Type.Float -> Ans(pos, FArray(x, y))
        | _ -> Ans(pos, Array(x, y)))
-  | Closure.Get(x, y) -> (* ÇÛÎó¤ÎÆÉ¤ß½Ð¤· (caml2html: virtual_get) *)
+  | Closure.Get(x, y) -> (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¤ß½Ð¤ï¿½ (caml2html: virtual_get) *)
       let offset = Id.genid "o" in
       (match M.find x env with
       | Type.Array(Type.Unit) -> Ans(pos, Nop)
@@ -163,7 +163,7 @@ let rec g env (pos, ebody) =
       | _ -> assert false)
   | Closure.ExtArray(Id.L(x)) -> Ans(pos, SetL(Id.L("min_caml_" ^ x)))
 
-(* ´Ø¿ô¤Î²¾ÁÛ¥Þ¥·¥ó¥³¡¼¥ÉÀ¸À® (caml2html: virtual_h) *)
+(* ï¿½Ø¿ï¿½ï¿½Î²ï¿½ï¿½Û¥Þ¥ï¿½ï¿½ó¥³¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: virtual_h) *)
 let h { Closure.name = (Id.L(x), t); Closure.args = yts; Closure.formal_fv = zts; Closure.body = e } =
   let (pos, ebody) = e in
   let (int, float) = separate yts in
@@ -178,7 +178,7 @@ let h { Closure.name = (Id.L(x), t); Closure.args = yts; Closure.formal_fv = zts
       { name = Id.L(x); args = int; fargs = float; body = load; ret = t2 }
   | _ -> assert false
 
-(* ¥×¥í¥°¥é¥àÁ´ÂÎ¤Î²¾ÁÛ¥Þ¥·¥ó¥³¡¼¥ÉÀ¸À® (caml2html: virtual_f) *)
+(* ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¤Î²ï¿½ï¿½Û¥Þ¥ï¿½ï¿½ó¥³¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: virtual_f) *)
 let f (Closure.Prog(fundefs, e)) =
   data := [];
   let fundefs = List.map h fundefs in

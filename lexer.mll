@@ -1,10 +1,10 @@
 {
-(* lexer¤¬ÍøÍÑ¤¹¤ëÊÑ¿ô¡¢´Ø¿ô¡¢·¿¤Ê¤É¤ÎÄêµÁ *)
+(* lexerï¿½ï¿½ï¿½ï¿½ï¿½Ñ¤ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½Ø¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤É¤ï¿½ï¿½ï¿½ï¿½ *)
 open Parser
 open Type
 }
 
-(* Àµµ¬É½¸½¤ÎÎ¬µ­ *)
+(* ï¿½ï¿½ï¿½ï¿½É½ï¿½ï¿½ï¿½ï¿½Î¬ï¿½ï¿½ *)
 let space = [' ' '\t' '\r']
 let digit = ['0'-'9']
 let lower = ['a'-'z']
@@ -16,7 +16,7 @@ rule token = parse
 | "\n"
     { Lexing.new_line lexbuf; token lexbuf }
 | "(*"
-    { comment lexbuf; (* ¥Í¥¹¥È¤·¤¿¥³¥á¥ó¥È¤Î¤¿¤á¤Î¥È¥ê¥Ã¥¯ *)
+    { comment lexbuf; (* ï¿½Í¥ï¿½ï¿½È¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤Î¤ï¿½ï¿½ï¿½Î¥È¥ï¿½Ã¥ï¿½ *)
       token lexbuf }
 | '('
     { LPAREN }
@@ -28,13 +28,13 @@ rule token = parse
     { BOOL(false) }
 | "not"
     { NOT }
-| digit+ (* À°¿ô¤ò»ú¶ç²òÀÏ¤¹¤ë¥ë¡¼¥ë (caml2html: lexer_int) *)
+| digit+ (* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¤ï¿½ï¿½ï¿½ë¡¼ï¿½ï¿½ (caml2html: lexer_int) *)
     { INT(int_of_string (Lexing.lexeme lexbuf)) }
 | digit+ ('.' digit*)? (['e' 'E'] ['+' '-']? digit+)?
     { FLOAT(float_of_string (Lexing.lexeme lexbuf)) }
-| '-' (* -.¤è¤ê¸å²ó¤·¤Ë¤·¤Ê¤¯¤Æ¤âÎÉ¤¤? ºÇÄ¹°ìÃ×? *)
+| '-' (* -.ï¿½ï¿½ï¿½ï¿½ó¤·¤Ë¤ï¿½ï¿½Ê¤ï¿½ï¿½Æ¤ï¿½ï¿½É¤ï¿½? ï¿½ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½? *)
     { MINUS }
-| '+' (* +.¤è¤ê¸å²ó¤·¤Ë¤·¤Ê¤¯¤Æ¤âÎÉ¤¤? ºÇÄ¹°ìÃ×? *)
+| '+' (* +.ï¿½ï¿½ï¿½ï¿½ó¤·¤Ë¤ï¿½ï¿½Ê¤ï¿½ï¿½Æ¤ï¿½ï¿½É¤ï¿½? ï¿½ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½? *)
     { PLUS }
 | '*'
     { MUL }
@@ -68,6 +68,8 @@ rule token = parse
     { OR }
 | "fiszero"
     { FISZERO }
+| "fequal"
+    { FEQUAL }
 | "fless"
     { FLESS }
 | "fispos"
@@ -134,9 +136,9 @@ rule token = parse
     { SEMISEMI }
 | eof
     { EOF }
-| lower (digit|lower|upper|'_')* (* Â¾¤Î¡ÖÍ½Ìó¸ì¡×¤è¤ê¸å¤Ç¤Ê¤¤¤È¤¤¤±¤Ê¤¤ *)
+| lower (digit|lower|upper|'_')* (* Â¾ï¿½Î¡ï¿½Í½ï¿½ï¿½ï¿½×¤ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½ï¿½È¤ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ *)
     { IDENT(Lexing.lexeme lexbuf) }
-| upper (digit|lower|upper|'_')* (* Â¾¤Î¡ÖÍ½Ìó¸ì¡×¤è¤ê¸å¤Ç¤Ê¤¤¤È¤¤¤±¤Ê¤¤ *)
+| upper (digit|lower|upper|'_')* (* Â¾ï¿½Î¡ï¿½Í½ï¿½ï¿½ï¿½×¤ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½ï¿½È¤ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ *)
     { UIDENT(Lexing.lexeme lexbuf) }
 | _
     { failwith

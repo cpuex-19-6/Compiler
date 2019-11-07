@@ -1,5 +1,5 @@
 %{
-(* parser¤¬ÍøÍÑ¤¹¤ëÊÑ¿ô¡¢´Ø¿ô¡¢·¿¤Ê¤É¤ÎÄêµÁ *)
+(* parserï¿½ï¿½ï¿½ï¿½ï¿½Ñ¤ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½Ø¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤É¤ï¿½ï¿½ï¿½ï¿½ *)
 open Syntax
 let addtyp x = (x, Type.gentyp ())
 
@@ -134,7 +134,7 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %}
 
 
-/* (* »ú¶ç¤òÉ½¤¹¥Ç¡¼¥¿·¿¤ÎÄêµÁ (caml2html: parser_token) *) */
+/* (* ï¿½ï¿½ï¿½ï¿½ï¿½É½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: parser_token) *) */
 %token <bool> BOOL
 %token <int> INT
 %token <float> FLOAT
@@ -171,11 +171,11 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %token AND 
 %token OR
 %token XOR
-%token FISZERO FLESS FISPOS FISNEG
+%token FISZERO FEQUAL FLESS FISPOS FISNEG
 %token FNEG FABS FHALF FSQR FLOOR FLOATOFINT INTOFFLOAT SQRT COS SIN ATAN
 %token READINT READFLOAT PRINTINT PRINTCHAR
 
-/* (* Í¥Àè½ç°Ì¤Èassociativity¤ÎÄêµÁ¡ÊÄã¤¤Êý¤«¤é¹â¤¤Êý¤Ø¡Ë (caml2html: parser_prior) *) */
+/* (* Í¥ï¿½ï¿½ï¿½Ì¤ï¿½associativityï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ã¤¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â¤¤ï¿½ï¿½ï¿½Ø¡ï¿½ (caml2html: parser_prior) *) */
 %nonassoc IN
 %right prec_let
 %right SEMICOLON
@@ -190,7 +190,7 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %left prec_app
 %left DOT
 
-/* (* ³«»Ïµ­¹æ¤ÎÄêµÁ *) */
+/* (* ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ *) */
 %type <Syntax.t> prog
 %start prog
 
@@ -209,7 +209,7 @@ main:
 | exp
     { $1 }
 
-simple_exp: /* (* ³ç¸Ì¤ò¤Ä¤±¤Ê¤¯¤Æ¤â´Ø¿ô¤Î°ú¿ô¤Ë¤Ê¤ì¤ë¼° (caml2html: parser_simple) *) */
+simple_exp: /* (* ï¿½ï¿½Ì¤ï¿½Ä¤ï¿½ï¿½Ê¤ï¿½ï¿½Æ¤ï¿½Ø¿ï¿½ï¿½Î°ï¿½ï¿½ï¿½ï¿½Ë¤Ê¤ï¿½ë¼° (caml2html: parser_simple) *) */
 | LPAREN exp RPAREN
     { $2 }
 | LPAREN RPAREN
@@ -225,7 +225,7 @@ simple_exp: /* (* ³ç¸Ì¤ò¤Ä¤±¤Ê¤¯¤Æ¤â´Ø¿ô¤Î°ú¿ô¤Ë¤Ê¤ì¤ë¼° (caml2html: parser_simp
 | simple_exp DOT LPAREN exp RPAREN
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Get($1, $4) }
 
-exp: /* (* °ìÈÌ¤Î¼° (caml2html: parser_exp) *) */
+exp: /* (* ï¿½ï¿½ï¿½Ì¤Î¼ï¿½ (caml2html: parser_exp) *) */
 | simple_exp
     { $1 }
 | NOT simple_exp
@@ -234,13 +234,13 @@ exp: /* (* °ìÈÌ¤Î¼° (caml2html: parser_exp) *) */
 | MINUS exp
     %prec prec_unary_minus
     { let (ln, e) = $2 in match e with
-    | Float(f) -> ln, Float(-.f) (* -1.23¤Ê¤É¤Ï·¿¥¨¥é¡¼¤Ç¤Ï¤Ê¤¤¤Î¤ÇÊÌ°·¤¤ *)
+    | Float(f) -> ln, Float(-.f) (* -1.23ï¿½Ê¤É¤Ï·ï¿½ï¿½ï¿½ï¿½é¡¼ï¿½Ç¤Ï¤Ê¤ï¿½ï¿½Î¤ï¿½ï¿½Ì°ï¿½ï¿½ï¿½ *)
     | e -> ln, Neg($2) }
 | exp MUL INT
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Mul($1, (start.pos_lnum,Int($3))) }
 | exp DIV INT
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Div($1, (start.pos_lnum,Int($3))) }
-| exp PLUS exp /* (* Â­¤·»»¤ò¹½Ê¸²òÀÏ¤¹¤ë¥ë¡¼¥ë (caml2html: parser_add) *) */
+| exp PLUS exp /* (* Â­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¸ï¿½ï¿½ï¿½Ï¤ï¿½ï¿½ï¿½ë¡¼ï¿½ï¿½ (caml2html: parser_add) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Add($1, $3) }
 | exp MINUS exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Sub($1, $3) }
@@ -280,6 +280,9 @@ exp: /* (* °ìÈÌ¤Î¼° (caml2html: parser_exp) *) */
 | FISZERO simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FEq($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.))) }
+| FEQUAL simple_exp simple_exp
+   %prec prec_app
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, FEq($2, $3) }
 | FLESS simple_exp simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FLT($2, $3) }
