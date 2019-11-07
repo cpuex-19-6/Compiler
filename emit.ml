@@ -103,8 +103,8 @@ and g' oc pos e =
             Printf.fprintf oc "%d\timvf\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos )
   | NonTail(x), SetL(Id.L(y)) ->
       (*let s = load_label pos x y in
-      Printf.fprintf oc "%s" s*)()
-  | NonTail(x), Mr(y) when x = y -> ()
+      Printf.fprintf oc "%s" s*)Printf.fprintf oc "%d\taddi\t%s, x0, %d\t\t! %d\n" (pcincr()) (reg x) (Hashtbl.find address_list y) pos
+  | NonTail(x), Mr(y) when x = y -> () 
   | NonTail(x), Mr(y) -> Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
   | NonTail(x), Neg(y) -> Printf.fprintf oc "%d\tsub\t%s, x0, %s\t\t! %d\n" (pcincr())(reg x) (reg y) pos
   | NonTail(x), And(y, z) -> Printf.fprintf oc "%d\tand\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
@@ -135,6 +135,13 @@ and g' oc pos e =
                                Printf.fprintf oc "%d\taddi\tx31, x31, -1\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tjal\tx0, -16\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\taddi\t%s, x30, 0\t\t! %d\n" (pcincr()) (reg x) pos)
+                               (*Printf.fprintf oc "%d\taddi\t%s, x3, 0\t\t! %d\n" (pcincr()) (reg x) pos;
+                               Printf.fprintf oc "%d\tadd\tx31, x0, %s\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\tbeq\tx31, x0, 20\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg z) pos;
+                               Printf.fprintf oc "%d\taddi\tx3, x3, 4\t\t! %d\n" (pcincr()) pos;(*hp += 4*)
+                               Printf.fprintf oc "%d\taddi\tx31, x31, -1\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tjal\tx0, -16\t\t! %d\n" (pcincr()) pos*)
   | NonTail(x), FArray(y, z) -> Printf.fprintf oc "%d\taddi\tx30, x3, 0\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tadd\tx31, x3, %s\t\t! %d\n" (pcincr()) (reg y) pos;
                                Printf.fprintf oc "%d\tbeq\tx31, x3, 20\t\t! %d\n" (pcincr()) pos;
@@ -411,7 +418,7 @@ let rec k oc = function
           jpincr();jpincr()))
     | NonTail(x), SetL(Id.L(y)) ->
         (*let s = load_label x y in
-        Printf.fprintf oc "%s" s*)()
+        Printf.fprintf oc "%s" s*)jpincr()
     | NonTail(x), Mr(y) when x = y -> ()
     | NonTail(x), Mr(y) -> jpincr()
     | NonTail(x), And(y, z) -> jpincr()
