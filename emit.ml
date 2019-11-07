@@ -37,9 +37,9 @@ let lower n = (n lsl 51) asr 51
 
 let address_list = Hashtbl.create 0
 
-let pc = ref 4
+let pc = ref 8
 let pcincr () = let n = !pc in pc := n + 4; n
-let jpc = ref 4
+let jpc = ref 8
 let jpincr() = (jpc := !jpc + 4)
 let num_genid2 = ref 0
 
@@ -637,10 +637,11 @@ let f oc (Prog(data, fundefs, e)) =
   temp_counter := !counter;
   List.iter (fun fundef -> i oc fundef) fundefs;
   Printf.fprintf oc "# jump to main entry point\n";
-  Printf.fprintf oc "0 \tjal\tx0, %d\n" (!jpc);
+  Printf.fprintf oc "0\taddi\tx2, x2, -8\n";
+  Printf.fprintf oc "0 \tjal\tx0, %d\n" ((!jpc)-4);
   k oc (NonTail("_R_0"), e);
-  pc := 4;
-  jpc := 4;
+  pc := 8;
+  jpc := 8;
 
   counter := !temp_counter;
   List.iter (fun fundef -> h oc fundef) fundefs;
