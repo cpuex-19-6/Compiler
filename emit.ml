@@ -336,8 +336,7 @@ and g'_tail_fif oc pos e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
   (try
     Printf.fprintf oc "%d\t%s\tx31, %s, %s\t\t! %d\n" (pcincr()) b (reg x) (reg y)  pos;
-    Printf.fprintf oc "%d\taddi\tx30, x0, 0\t\t! %d\n" (pcincr()) pos;
-    Printf.fprintf oc "%d\tbeq\tx31, x30, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_else) - (!pc)) pos;
+    Printf.fprintf oc "%d\tbeq\tx31, x0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_else) - (!pc)) pos;
   with Not_found ->
     Printf.printf "LABEL %s NOT FOUND!\n" b_else;
     Printf.fprintf oc "%d\t%s \t%s, %s, NOT_FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
@@ -352,8 +351,7 @@ and g'_non_tail_fif oc pos dest e1 e2 b bn x y=
   let b_cont = Id.genid (b ^ "_cont") in
   (try
   Printf.fprintf oc "%d\t%s\tx31, %s, %s\t\t! %d\n" (pcincr()) b (reg x) (reg y)  pos;
-  Printf.fprintf oc "%d\taddi\tx30, x0, 0\t\t! %d\n" (pcincr()) pos;
-  Printf.fprintf oc "%d\tbeq\tx31, x30, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_else) - (!pc)) pos;
+  Printf.fprintf oc "%d\tbeq\tx31, x0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_else) - (!pc)) pos;
   with Not_found ->
     Printf.printf "LABEL %s NOT FOUND\n" b_else;
     Printf.fprintf oc "%d\t%s\t%s, %s, NOT FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
@@ -581,7 +579,7 @@ let rec k oc = function
     and k'_tail_fif oc e1 e2 b bn x y =
     let b_else = Id.genid2 (b ^ "_else") in
     num_genid2 := !num_genid2 + 1;
-    jpincr();jpincr();jpincr();
+    jpincr();jpincr();
     let stackset_back = !stackset in
     k oc (Tail, e1);
     Hashtbl.add address_list b_else !jpc;
@@ -592,7 +590,7 @@ let rec k oc = function
     let b_else = Id.genid2 (b ^ "_else") in
     let b_cont = Id.genid2 (b ^ "_cont") in
     num_genid2 := !num_genid2 + 2;
-    jpincr();jpincr();jpincr();
+    jpincr();jpincr();
     let stackset_back = !stackset in
     k oc (dest, e1);
     let stackset1 = !stackset in
@@ -645,7 +643,7 @@ let f oc (Prog(data, fundefs, e)) =
   List.iter (fun fundef -> i oc fundef) fundefs;
   Printf.fprintf oc "# jump to main entry point\n";
   Printf.fprintf oc "0\taddi\tx2, x2, -8\n";
-  Printf.fprintf oc "0 \tjal\tx0, %d\n" ((!jpc)-4);
+  Printf.fprintf oc "4\tjal\tx0, %d\n" ((!jpc)-4);
   k oc (NonTail("_R_0"), e);
   pc := 8;
   jpc := 8;
