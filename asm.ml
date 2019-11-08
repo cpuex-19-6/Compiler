@@ -1,10 +1,10 @@
 (* PowerPC assembly with a few virtual instructions *)
 
 type id_or_imm = V of Id.t | C of int
-type t = (* Ì¿Îá¤ÎÎó (caml2html: sparcasm_t) *)
+type t = (* Ì¿ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: sparcasm_t) *)
   | Ans of int * exp
   | Let of int * (Id.t * Type.t) * exp * t
-and exp = (* °ì¤Ä°ì¤Ä¤ÎÌ¿Îá¤ËÂÐ±þ¤¹¤ë¼° (caml2html: sparcasm_exp) *)
+and exp = (* ï¿½ï¿½Ä°ï¿½Ä¤ï¿½Ì¿ï¿½ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½ï¿½ë¼° (caml2html: sparcasm_exp) *)
   | Nop
   | Li of int
   | FLi of float
@@ -47,16 +47,16 @@ and exp = (* °ì¤Ä°ì¤Ä¤ÎÌ¿Îá¤ËÂÐ±þ¤¹¤ë¼° (caml2html: sparcasm_exp) *)
   (* virtual instructions *)
   | IfEq of Id.t * id_or_imm * t * t
   | IfLE of Id.t * id_or_imm * t * t
-  | IfGE of Id.t * id_or_imm * t * t (* º¸±¦ÂÐ¾Î¤Ç¤Ï¤Ê¤¤¤Î¤ÇÉ¬Í× *)
+  | IfGE of Id.t * id_or_imm * t * t (* ï¿½ï¿½ï¿½ï¿½ï¿½Ð¾Î¤Ç¤Ï¤Ê¤ï¿½ï¿½Î¤ï¿½É¬ï¿½ï¿½ *)
   | IfFEq of Id.t * Id.t * t * t
   | IfFLE of Id.t * Id.t * t * t
   (* closure address, integer arguments, and float arguments *)
   | CallCls of Id.t * Id.t list * Id.t list
   | CallDir of Id.l * Id.t list * Id.t list
-  | Save of Id.t * Id.t (* ¥ì¥¸¥¹¥¿ÊÑ¿ô¤ÎÃÍ¤ò¥¹¥¿¥Ã¥¯ÊÑ¿ô¤ØÊÝÂ¸ (caml2html: sparcasm_save) *)
-  | Restore of Id.t (* ¥¹¥¿¥Ã¥¯ÊÑ¿ô¤«¤éÃÍ¤òÉü¸µ (caml2html: sparcasm_restore) *)
+  | Save of Id.t * Id.t (* ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½Í¤ò¥¹¥ï¿½ï¿½Ã¥ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½ï¿½Â¸ (caml2html: sparcasm_save) *)
+  | Restore of Id.t (* ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¤ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: sparcasm_restore) *)
 type fundef = { name : Id.l; args : Id.t list; fargs : Id.t list; body : t; ret : Type.t }
-(* ¥×¥í¥°¥é¥àÁ´ÂÎ = ÉâÆ°¾®¿ôÅÀ¿ô¥Æ¡¼¥Ö¥ë + ¥È¥Ã¥×¥ì¥Ù¥ë´Ø¿ô + ¥á¥¤¥ó¤Î¼° (caml2html: sparcasm_prog) *)
+(* ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ = ï¿½ï¿½Æ°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½ï¿½Ö¥ï¿½ + ï¿½È¥Ã¥×¥ï¿½Ù¥ï¿½Ø¿ï¿½ + ï¿½á¥¤ï¿½ï¿½Î¼ï¿½ (caml2html: sparcasm_prog) *)
 type prog = Prog of (Id.l * float) list * fundef list * t
 
 let fletd(n, x, e1, e2) = Let(n, (x, Type.Float), e1, e2)
@@ -66,7 +66,7 @@ let regs = (* Array.init 27 (fun i -> Printf.sprintf "_R_%d" i) *)
   [| "%x4"; "%x5"; "%x6"; "%x7"; "%x8"; "%x9"; "%x10";
      "%x11"; "%x12"; "%x13"; "%x14"; "%x15"; "%x16"; "%x17"; "%x18";
      "%x19"; "%x20"; "%x21"; "%x22"; "%x23"; "%x24"; "%x25"; "%x26";
-     "%x27"; "%x28"; "%x29"; "%x30" |]
+     "%x27"; "%x28"; "%x29"(*; "%x30"*) |]
 let fregs = Array.init 32 (fun i -> Printf.sprintf "%%f%d" i)
 let allregs = Array.to_list regs
 let allfregs = Array.to_list fregs
@@ -78,11 +78,11 @@ let reg_hp = "%x3" (* heap pointer (caml2html: sparcasm_reghp) *)
 let reg_tmp = "%x31" (* [XX] ad hoc *)
 let is_reg x = (x.[0] = '%')
 
-(* ¥ì¥¸¥¹¥¿¤Î»È¤¤Êý *)
-(* 0ÈÖ: ¾ï¤Ë0¤Î¥ì¥¸¥¹¥¿ *)
-(* 1ÈÖ: ¥ê¥ó¥¯¥ì¥¸¥¹¥¿ *)
-(* 2ÈÖ: ¥¹¥¿¥Ã¥¯¥Ý¥¤¥ó¥¿ *)
-(* 3ÈÖ: ¥Ò¡¼¥×¥Ý¥¤¥ó¥¿ *)
+(* ï¿½ì¥¸ï¿½ï¿½ï¿½ï¿½ï¿½Î»È¤ï¿½ï¿½ï¿½ *)
+(* 0ï¿½ï¿½: ï¿½ï¿½ï¿½0ï¿½Î¥ì¥¸ï¿½ï¿½ï¿½ï¿½ *)
+(* 1ï¿½ï¿½: ï¿½ï¿½ó¥¯¥ì¥¸ï¿½ï¿½ï¿½ï¿½ *)
+(* 2ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½Ý¥ï¿½ï¿½ï¿½ *)
+(* 3ï¿½ï¿½: ï¿½Ò¡ï¿½ï¿½×¥Ý¥ï¿½ï¿½ï¿½ *)
 
 (* super-tenuki *)
 let rec remove_and_uniq xs = function
