@@ -59,7 +59,7 @@ release: min-caml.html
 	cp Makefile stub.c SPARC/libmincaml.S min-caml.html min-caml.tar.gz ../htdocs/
 
 min-rt: min-caml raytracer/globals.ml raytracer/minrt.ml
-	cat raytracer/globals.ml library.ml raytracer/minrt.ml > raytrace.ml
+	cat raytracer/globals.ml library.ml raytracer/minrt.ml > raytrace.ml-temp
 	./min-caml raytrace
 
 include OCamlMakefile
