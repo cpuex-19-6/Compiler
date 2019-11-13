@@ -1,5 +1,5 @@
 %{
-(* parser�����Ѥ����ѿ����ؿ������ʤɤ���� *)
+(* parserが利用する変数、関数、型などの定義 *)
 open Syntax
 let addtyp x = (x, Type.gentyp ())
 
@@ -140,7 +140,7 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %}
 
 
-/* (* �����ɽ���ǡ���������� (caml2html: parser_token) *) */
+/* (* 字句を表すデータ型の定義 (caml2html: parser_token) *) */
 %token <bool> BOOL
 %token <int> INT
 %token <float> FLOAT
@@ -181,7 +181,7 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %token FNEG FABS FHALF FSQR FLOOR FLOATOFINT INTOFFLOAT SQRT COS SIN ATAN
 %token READINT READFLOAT PRINTINT PRINTCHAR
 
-/* (* ͥ���̤�associativity��������㤤������⤤���ء� (caml2html: parser_prior) *) */
+/* (* 優先順位とassociativityの定義（低い方から高い方へ） (caml2html: parser_prior) *) */
 %nonassoc IN
 %right prec_let
 %right SEMICOLON
@@ -196,7 +196,7 @@ Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
 %left prec_app
 %left DOT
 
-/* (* ���ϵ������� *) */
+/* (* 開始記号の定義 *) */
 %type <Syntax.t> prog
 %start prog
 
@@ -215,7 +215,7 @@ main:
 | exp
     { $1 }
 
-simple_exp: /* (* ��̤�Ĥ��ʤ��Ƥ�ؿ��ΰ����ˤʤ�뼰 (caml2html: parser_simple) *) */
+simple_exp: /* (* 括弧をつけなくても関数の引数になれる式 (caml2html: parser_simple) *) */
 | LPAREN exp RPAREN
     { $2 }
 | LPAREN RPAREN
@@ -231,7 +231,7 @@ simple_exp: /* (* ��̤�Ĥ��ʤ��Ƥ�ؿ��ΰ����ˤʤ��
 | simple_exp DOT LPAREN exp RPAREN
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Get($1, $4) }
 
-exp: /* (* ���̤μ� (caml2html: parser_exp) *) */
+exp: /* (* 一般の式 (caml2html: parser_exp) *) */
 | simple_exp
     { $1 }
 | NOT simple_exp
@@ -240,13 +240,13 @@ exp: /* (* ���̤μ� (caml2html: parser_exp) *) */
 | MINUS exp
     %prec prec_unary_minus
     { let (ln, e) = $2 in match e with
-    | Float(f) -> ln, Float(-.f) (* -1.23�ʤɤϷ����顼�ǤϤʤ��Τ��̰��� *)
+    | Float(f) -> ln, Float(-.f) (* -1.23などは型エラーではないので別扱い *)
     | e -> ln, Neg($2) }
 | exp MUL INT
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Mul($1, (start.pos_lnum,Int($3))) }
 | exp DIV INT
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Div($1, (start.pos_lnum,Int($3))) }
-| exp PLUS exp /* (* ­������ʸ���Ϥ���롼�� (caml2html: parser_add) *) */
+| exp PLUS exp /* (* 足し算を構文解析するルール (caml2html: parser_add) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Add($1, $3) }
 | exp MINUS exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Sub($1, $3) }
