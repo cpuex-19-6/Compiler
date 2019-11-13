@@ -12,6 +12,7 @@ min-caml.top
 *.bin
 *.log
 *-2.ml
+*.ml-temp
 raytrace.ml
 test.ml
 

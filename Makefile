@@ -28,7 +28,7 @@ simm.mli simm.ml regAlloc.mli regAlloc.ml emit.mli emit.ml \
 main.mli main.ml
 
 %.s: $(RESULT) %.ml
-	cat library.ml $*.ml > $*-2.ml
+	cat library.ml $*.ml > $*.ml-temp
 	./$(RESULT) $*
 test/%: test/%.s libmincaml.S stub.c
 	$(CC) $(CFLAGS) -m32 $^ -lm -o $@
