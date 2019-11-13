@@ -58,6 +58,12 @@ iff (fless x (pi/!float(2.))) (tuple [x;(float 1.)]) @@
 iff (fless x pi) (tuple [(pi-!x);(0, FNeg(float (1.)))]) @@
 iff (fless x (pi*!float(1.5))) (tuple[(x-!pi);(0,FNeg(float (1.)))]) @@
 tuple [(pi*!float(2.))-!x;float 1.]
+
+let pi4div2 x = 
+iff (fless x (pi/!float(2.))) (tuple [x;(float 1.)]) @@
+iff (fless x pi) (tuple [(pi-!x);float (1.)]) @@
+iff (fless x (pi*!float(1.5))) (tuple[(x-!pi);(0,FNeg(float (1.)))]) @@
+tuple [(pi*!float(2.))-!x;(0,FNeg(float 1.))]
    
 let tailor_cos e =
   letvar "x" e @@
@@ -94,9 +100,9 @@ lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])])
 
 let sin e = 
 letrec "pi_div" ["e";"x"] (pi_div (var "e") (var "x")) @@
-letrec "pi4div" ["x"] (pi4div (var "x")) @@
+letrec "pi4div2" ["x"] (pi4div2 (var "x")) @@
 letrec "tailor_sin" ["e"] (tailor_sin (var "e")) @@
-lettuple ["a";"b"] (app (var "pi4div") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
+lettuple ["a";"b"] (app (var "pi4div2") [(app (var "pi_div") [e;pi*!float(2.)])]) @@
 (var "b")  *! (app (var "tailor_sin") [var "a"])
 
 
@@ -310,12 +316,6 @@ exp: /* (* ���̤μ� (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FtoI($2) }
 | SQRT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FSqrt($2) }
-| COS simple_exp
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(cos $2) }
-| SIN simple_exp
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(sin $2) }
-| ATAN simple_exp
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, snd(atan $2) }
 | READINT simple_exp
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Read }
 | READFLOAT simple_exp

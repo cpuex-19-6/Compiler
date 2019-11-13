@@ -92,12 +92,6 @@ rule token = parse
     { INTOFFLOAT }
 | "sqrt"
     { SQRT }
-| "cos"
-    { COS }
-| "sin"
-    { SIN }
-| "atan"
-    { ATAN }
 | "read_int"
     { READINT }
 | "read_float"
