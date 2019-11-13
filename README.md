@@ -21,7 +21,7 @@ make
 
 レイトレ以外で、三角関数を使うコード（例えば、`float-check.ml`）をコンパイルする場合は、
 ```
-make float-check.s
+make test/float-check.s
 ```
 で`test/` ディレクトリ内の `float-check.ml` のアセンブラ `float-check-2.s` が出力されます。
 （コードは`test/` ディレクトリ内に置いてください。）
