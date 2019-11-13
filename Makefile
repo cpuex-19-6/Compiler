@@ -1,7 +1,7 @@
 # Sumii's Makefile for Min-Caml (for GNU Make)
 # 
-# ack.ml�ʤɤΥƥ��ȥץ�������test/���Ѱդ���make do_test��¹Ԥ���ȡ�
-# min-caml��ocaml�ǥ���ѥ��롦�¹Ԥ�����̤�ư����Ӥ��ޤ���
+# ack.mlなどのテストプログラムをtest/に用意してmake do_testを実行すると、
+# min-camlとocamlでコンパイル・実行した結果を自動で比較します。
 
 RESULT = min-caml
 NCSUFFIX = .opt
@@ -11,14 +11,14 @@ OCAMLLDFLAGS=-warn-error -31
 
 default: debug-code top $(RESULT)
 $(RESULT): debug-code top
-## [��ʬ�ʽ�����Ѥ���]
-## ��OCamlMakefile��Ť�GNU Make�ΥХ�(?)�Ǿ�Τ褦�������ɬ��(??)
-## ��OCamlMakefile�Ǥ�debug-code��native-code�Τ��줾���
-##   .mli������ѥ��뤵��Ƥ��ޤ��Τǡ�ξ���Ȥ�default:�α��դ�������
-##   ��make���ˡ�.mli���ѹ�����Ƥ���Τǡ�.ml��ƥ���ѥ��뤵���
+## [自分（住井）用の注]
+## ・OCamlMakefileや古いGNU Makeのバグ(?)で上のような定義が必要(??)
+## ・OCamlMakefileではdebug-codeとnative-codeのそれぞれで
+##   .mliがコンパイルされてしまうので、両方ともdefault:の右辺に入れると
+##   再make時に（.mliが変更されているので）.mlも再コンパイルされる
 clean:: nobackup
 
-# ���⤷�������¤�����顢����˹�碌���Ѥ���
+# ↓もし実装を改造したら、それに合わせて変える
 SOURCES = float.c type.ml id.ml m.ml s.ml \
 syntax.ml parser.mly lexer.mll typing.mli typing.ml kNormal.mli kNormal.ml \
 alpha.mli alpha.ml beta.mli beta.ml assoc.mli assoc.ml \
@@ -27,7 +27,7 @@ closure.mli closure.ml asm.mli asm.ml virtual.mli virtual.ml \
 simm.mli simm.ml regAlloc.mli regAlloc.ml emit.mli emit.ml \
 main.mli main.ml
 
-# ���ƥ��ȥץ�����ब�������顢��������䤹
+# ↓テストプログラムが増えたら、これも増やす
 TESTS = print sum-tail gcd sum fib ack even-odd \
 adder funcomp cls-rec cls-bug cls-bug2 cls-reg-bug \
 shuffle spill spill2 spill3 join-stack join-stack2 join-stack3 \
