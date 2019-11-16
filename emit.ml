@@ -158,7 +158,7 @@ and g' oc pos e =
       Printf.fprintf oc "%d\tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg y) (reg x) z pos
   | NonTail(x), FMr(y) when x = y -> ()
   | NonTail(x), FMr(y) -> Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg y) pos
-  | NonTail(x), FNeg(y) -> Printf.fprintf oc "%d\tfsgnjn\t%s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
+  | NonTail(x), FNeg(y) -> Printf.fprintf oc "%d\tfsgnjn\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg y) pos
   | NonTail(x), FAdd(y, z) -> Printf.fprintf oc "%d\tfadd\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), FSub(y, z) -> Printf.fprintf oc "%d\tfsub\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), FMul(y, z) -> Printf.fprintf oc "%d\tfmul\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
