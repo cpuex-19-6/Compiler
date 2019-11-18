@@ -62,4 +62,8 @@ min-rt: min-caml raytracer/globals.ml raytracer/minrt.ml
 	cat raytracer/globals.ml library.ml raytracer/minrt.ml > raytrace.ml-temp
 	./min-caml raytrace
 
+min-rt128: min-caml raytracer/globals.ml raytracer/minrt.ml
+	cat raytracer/globals.ml library.ml raytracer/minrt.ml | sed -e 's/rt 512 512/rt 128 128/g' > raytrace128.ml-temp
+	./min-caml raytrace128
+
 include OCamlMakefile
