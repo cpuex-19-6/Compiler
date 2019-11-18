@@ -11,6 +11,7 @@ and exp = (* ��İ�Ĥ�̿����б����뼰 (caml2html: sparcas
   | SetL of Id.l
   | And of Id.t * Id.t
   | Or of Id.t * Id.t
+  | Xor of Id.t * Id.t
   | AndI of Id.t * int
   | FAbs of Id.t 
   | ItoF of Id.t
@@ -97,7 +98,7 @@ let rec fv_exp = function
   | Mr(x) | Neg(x) | FMr(x) | FNeg(x) | Save(x, _) | ItoF(x) | FtoI(x) | AndI(x,_) | FAbs(x) | FSqrt(x) | FFloor(x) | Write(x) -> [x]
   | Add(x, y') | Sub(x, y') | Mul(x, y') | Div(x, y') | Slw(x, y') | Sra(x, y')  | Lfd(x, y') | Lwz(x, y') -> x :: fv_id_or_imm y'
   | Stw(x, y, z') | Stfd(x, y, z') -> x :: y :: fv_id_or_imm z'
-  | And(x, y) | Or(x, y) | Rem(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | FEq(x, y) | FLT(x, y) | Array(x, y) | FArray(x, y) -> [x; y]
+  | And(x, y) | Or(x, y) | Xor(x, y)| Rem(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | FEq(x, y) | FLT(x, y) | Array(x, y) | FArray(x, y) -> [x; y]
   | IfEq(x, y', e1, e2) | IfLE(x, y', e1, e2) | IfGE(x, y', e1, e2) ->  x :: fv_id_or_imm y' @ remove_and_uniq S.empty (fv e1 @ fv e2) (* uniq here just for efficiency *)
   | IfFEq(x, y, e1, e2) | IfFLE(x, y, e1, e2) -> x :: y :: remove_and_uniq S.empty (fv e1 @ fv e2) (* uniq here just for efficiency *)
   | CallCls(x, ys, zs) -> x :: ys @ zs

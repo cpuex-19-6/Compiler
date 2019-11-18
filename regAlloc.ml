@@ -121,6 +121,7 @@ and g' pos dest cont regenv = function (* ��̿��Υ쥸�������
   | Mr(x) -> (Ans(pos, Mr(find x Type.Int regenv)), regenv)
   | And(x, y) -> (Ans(pos, And(find x Type.Bool regenv, find y Type.Bool regenv)), regenv)
   | Or(x, y) -> (Ans(pos, Or(find x Type.Bool regenv, find y Type.Bool regenv)), regenv)
+  | Xor(x, y) -> (Ans(pos, Xor(find x Type.Bool regenv, find y Type.Bool regenv)), regenv)
   | AndI(x, y) -> (Ans(pos, AndI(find x Type.Int regenv, y)), regenv)
   | FAbs(x) -> (Ans(pos, FAbs(find x Type.Float regenv)), regenv)
   | ItoF(x) -> (Ans(pos, ItoF(find x Type.Int regenv)), regenv)

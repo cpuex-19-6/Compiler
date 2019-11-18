@@ -6,6 +6,7 @@ and tt = (* クロージャ変換後の式 (caml2html: closure_t) *)
   | Float of float
   | And of Id.t * Id.t
   | Or of Id.t * Id.t
+  | Xor of Id.t * Id.t
   | AndI of Id.t * int
   | FAbs of Id.t 
   | ItoF of Id.t
@@ -51,7 +52,7 @@ let rec fv (_, ebody) =
   match ebody with
   | Unit | Int(_) | Float(_) | ExtArray(_) | Read | FRead -> S.empty
   | Neg(x) | FNeg(x) | AndI(x,_) | ItoF(x) | FtoI(x) | FAbs(x) | FSqrt(x) | FFloor(x) | Write(x) -> S.singleton x
-  | And(x, y) | Or(x, y) | FEq(x, y) | FLT(x, y) | Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Rem(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Array(x, y) | Get(x, y) -> S.of_list [x; y]
+  | And(x, y) | Or(x, y) | Xor(x, y) | FEq(x, y) | FLT(x, y) | Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Rem(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Array(x, y) | Get(x, y) -> S.of_list [x; y]
   | IfEq(x, y, e1, e2)| IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
   | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
   | Var(x) -> S.singleton x
@@ -71,6 +72,7 @@ let rec g env known (pos, ebody) =
   | KNormal.Neg(x) -> Neg(x)
   | KNormal.And(x, y) -> And(x, y)
   | KNormal.Or(x, y) -> Or(x, y)
+  | KNormal.Xor(x, y) -> Xor(x, y)
   | KNormal.AndI(x, y) -> AndI(x, y)
   | KNormal.FAbs(x) -> FAbs(x)
   | KNormal.FFloor(x) -> FFloor(x)

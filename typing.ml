@@ -28,6 +28,7 @@ let rec deref_term (pos, ebody) =
   | Neg(e) -> pos, Neg(deref_term e)
   | And(e1,e2) -> pos, And(deref_term e1, deref_term e2)
   | Or(e1,e2) -> pos, Or(deref_term e1, deref_term e2)
+  | Xor(e1,e2) -> pos, Or(deref_term e1, deref_term e2)
   | AndI(e1,e2) -> pos, AndI(deref_term e1, e2)
   | FAbs(e) -> pos, FAbs(deref_term e)
   | ItoF(e) -> pos,  ItoF(deref_term e)
@@ -108,6 +109,10 @@ let rec g pos env e = (* 型推論ルーチン (caml2html: typing_g) *)
         unify pos Type.Bool (g pos2 env e2);
         Type.Bool
     | Or((pos1,e1),(pos2,e2)) -> 
+        unify pos Type.Bool (g pos1 env e1);
+        unify pos Type.Bool (g pos2 env e2);
+        Type.Bool
+    | Xor((pos1,e1),(pos2,e2)) -> 
         unify pos Type.Bool (g pos1 env e1);
         unify pos Type.Bool (g pos2 env e2);
         Type.Bool

@@ -93,9 +93,11 @@ and g' oc pos e =
       Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\t\t! %d\n"(pcincr()) s (reg x) (reg reg_tmp) pos;*)
       let u = Int32.to_int(get_upper d) * 4096 in
       let l = Int32.to_int(get_lower d) in
-      if u = 0 then 
+      if u = 0 && (l <> 0)then 
         (Printf.fprintf oc "%d\taddi\tx31, x0, %d\t\t! %d\n" (pcincr())  l pos;
         Printf.fprintf oc "%d\timvf\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos)
+      else if u = 0 then 
+        Printf.fprintf oc "%d\timvf\t%s, x0\t\t! %d\n" (pcincr()) (reg x) pos
       else
          (Printf.fprintf oc "%d\tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
          (if l <> 0 then
@@ -109,6 +111,7 @@ and g' oc pos e =
   | NonTail(x), Neg(y) -> Printf.fprintf oc "%d\tsub\t%s, x0, %s\t\t! %d\n" (pcincr())(reg x) (reg y) pos
   | NonTail(x), And(y, z) -> Printf.fprintf oc "%d\tand\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Or(y, z) -> Printf.fprintf oc "%d\tor\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
+  | NonTail(x), Xor(y, z) -> Printf.fprintf oc "%d\txor\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), AndI(y, z) -> Printf.fprintf oc "%d\tandi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
   | NonTail(x), FAbs(y) -> Printf.fprintf oc "%d\tfsgnjx\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg y) pos
   | NonTail(x), ItoF(y) -> Printf.fprintf oc "%d\titof\t%s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
@@ -192,7 +195,7 @@ and g' oc pos e =
   | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ | Write _ as exp) ->
       g' oc pos (NonTail(Id.gentmp Type.Unit), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
-  | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Sra _ | Lwz _ | FtoI _  | And _ | Or _ | AndI _ | FEq _ | FLT _ | Read | Array _  | FArray _ as exp) ->
+  | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Sra _ | Lwz _ | FtoI _  | And _ | Or _  | Xor _ | AndI _ | FEq _ | FLT _ | Read | Array _  | FArray _ as exp) ->
       g' oc pos (NonTail(regs.(0)), exp);
       Printf.fprintf oc "%d\tjalr\tx0, x1, 0\t\t! %d\n" (pcincr()) pos;
   | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FAbs _ | FSqrt _ | FFloor _  | FRead as exp) ->
@@ -256,25 +259,22 @@ and g' oc pos e =
         Printf.fprintf oc "%d\tjal\tx0, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
       )
   | NonTail(a), CallCls(x, ys, zs) ->
-      Printf.fprintf oc "%d\taddi\t%s, x1, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       g'_args oc pos [(x, reg_cl)] ys zs;
       let ss = stacksize () in
-      Printf.fprintf oc "%d\tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_tmp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\tsw\t%s, x1, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (-(ss - 4)) pos;
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) (-ss) pos;
       Printf.fprintf oc "%d\tlw\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_cl) pos;
       Printf.fprintf oc "%d\tjalr\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
-      Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_sp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\tlw\tx1, %s, %d\t\t! %d\n" (pcincr())  (reg reg_sp) (-(ss - 4)) pos;
       if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
       else if List.mem a allfregs && a <> fregs.(0) then
         Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
-      Printf.fprintf oc "%d\taddi\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos
   | (NonTail(a), CallDir(Id.L(x), ys, zs)) ->
-      Printf.fprintf oc "%d\taddi\t%s, x1, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       g'_args oc pos [] ys zs;
       let ss = stacksize () in
-      Printf.fprintf oc "%d\tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_tmp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\tsw\t%s, x1, %d\t\t! %d\n" (pcincr()) (reg reg_sp)  (-(ss - 4)) pos;
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) (-ss) pos;
       (try
         Printf.fprintf oc "%d\tjal\tx1, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list x) - (!pc)) pos;
@@ -283,12 +283,11 @@ and g' oc pos e =
         Printf.fprintf oc "%d\tjal\tx1, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
       );
       Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
-      Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) (reg reg_sp) (-(ss - 4)) pos;
+      Printf.fprintf oc "%d\tlw\tx1, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (-(ss - 4)) pos;
       if List.mem a allregs && a <> regs.(0) then
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
       else if List.mem a allfregs && a <> fregs.(0) then
         Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
-      Printf.fprintf oc "%d\taddi\tx1, %s, 0\t\t! %d\n" (pcincr()) (reg reg_tmp) pos
 and g'_tail_if oc pos e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
   (try
@@ -402,8 +401,10 @@ let rec k oc = function
     | NonTail(x), FLi(d) ->
     let u = Int32.to_int(get_upper d) in
     let l = Int32.to_int(get_lower d) in
-    if u = 0 then 
+    if u = 0 && (l <> 0) then 
      (jpincr();jpincr())
+     else if u = 0 then
+     jpincr()
     else
        (jpincr();
        (if l <> 0 then
@@ -415,6 +416,7 @@ let rec k oc = function
     | NonTail(x), Mr(y) -> jpincr()
     | NonTail(x), And(y, z) -> jpincr()
     | NonTail(x), Or(y, z) -> jpincr()
+    | NonTail(x), Xor(y, z) -> jpincr()
     | NonTail(x), AndI(y, z) -> jpincr()
     | NonTail(x), FAbs(y) -> jpincr()
     | NonTail(x), ItoF(y) -> jpincr()
@@ -469,7 +471,7 @@ let rec k oc = function
     | Tail, (Nop | Stw _ | Stfd _ | Comment _ | Save _ | Write _ as exp) ->
         k' oc (NonTail(Id.gentmp Type.Unit), exp);
         jpincr()
-    | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Sra _ | Lwz _ | FtoI _ | FEq _ | FLT _ | And _ | Or _ | AndI _ | Read | Array _ | FArray _  as exp) ->
+    | Tail, (Li _ | SetL _ | Mr _ | Neg _ | Add _ | Sub _ | Div _ | Rem _ | Slw _ | Sra _ | Lwz _ | FtoI _ | FEq _ | FLT _ | And _ | Or _ | Xor _ | AndI _ | Read | Array _ | FArray _  as exp) ->
         k' oc (NonTail(regs.(0)), exp);
         jpincr()
     | Tail, (FLi _ | FMr _ | FNeg _ | FAdd _ | FSub _ | FMul _ | FDiv _ | Lfd _ | ItoF _ | FSqrt _  | FFloor _ | FAbs _ | FRead as exp) ->
@@ -526,23 +528,21 @@ let rec k oc = function
         k'_args oc [] ys zs;
         jpincr()
     | NonTail(a), CallCls(x, ys, zs) ->
-        jpincr();
         k'_args oc [(x, reg_cl)] ys zs;
         let _ = stacksize () in
         jpc := !jpc + 24;
         if List.mem a allregs && a <> regs.(0) then
           jpincr()
         else if List.mem a allfregs && a <> fregs.(0) then
-          jpincr();jpincr()
+          jpincr()
     | (NonTail(a), CallDir(Id.L(x), ys, zs)) ->
-        jpincr();
         k'_args oc [] ys zs;
         let _ = stacksize () in
         jpc := !jpc + 20;
         if List.mem a allregs && a <> regs.(0) then
           jpincr()
         else if List.mem a allfregs && a <> fregs.(0) then
-          jpincr();jpincr()
+          jpincr()
   and k'_tail_if oc e1 e2 b bn x y =
     let b_else = Id.genid2 (b ^ "_else") in
     num_genid2 := !num_genid2 + 1;

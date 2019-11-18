@@ -49,6 +49,7 @@ let rec g env (pos, ebody) =
   | Closure.Neg(x) -> Ans(pos, Neg(x))
   | Closure.And(x, y) -> Ans(pos, And(x, y))
   | Closure.Or(x, y) -> Ans(pos, Or(x, y))
+  | Closure.Xor(x, y) -> Ans(pos, Xor(x, y))
   | Closure.AndI(x, y) -> Ans(pos, AndI(x, y))
   | Closure.FAbs(x) -> Ans(pos, FAbs(x))
   | Closure.ItoF(x) -> Ans(pos, ItoF(x))

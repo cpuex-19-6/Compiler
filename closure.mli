@@ -6,6 +6,7 @@ and tt =
   | Float of float
   | And of Id.t * Id.t
   | Or of Id.t * Id.t
+  | Xor of Id.t * Id.t
   | AndI of Id.t * int
   | FAbs of Id.t 
   | ItoF of Id.t

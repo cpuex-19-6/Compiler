@@ -135,7 +135,8 @@ let atan e =
  (tailor_atan e)
 
 let xor x y = 
-Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))
+(*Or((0,And(x,(0,Not(y)))),(0,And((0,(Not(x))),y)))*)
+Xor(x, y)
 
 %}
 

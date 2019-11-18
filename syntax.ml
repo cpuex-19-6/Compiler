@@ -7,6 +7,7 @@ and tt = (* MinCamlの構文を表現するデータ型 (caml2html: syntax_t) *)
   | Not of t
   | And of t * t
   | Or of t * t
+  | Xor of t * t
   | Neg of t
   | Add of t * t
   | Sub of t * t
