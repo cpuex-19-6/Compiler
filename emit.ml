@@ -288,6 +288,7 @@ and g' oc pos e =
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
       else if List.mem a allfregs && a <> fregs.(0) then
         Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
+  | _ -> raise Not_found
 and g'_tail_if oc pos e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
   (try
@@ -543,6 +544,7 @@ let rec k oc = function
           jpincr()
         else if List.mem a allfregs && a <> fregs.(0) then
           jpincr()
+    | _ -> raise Not_found
   and k'_tail_if oc e1 e2 b bn x y =
     let b_else = Id.genid2 (b ^ "_else") in
     num_genid2 := !num_genid2 + 1;

@@ -28,7 +28,7 @@ value getlo(value v) {
 value get_upper(value v){
   dbl2 d;
   d.d = Double_val(v);
-  return copy_int32((d.i >> 12) + ((d.i & 0x300) >> 11));
+  return copy_int32((d.i >> 12) + ((d.i & 0x800) >> 11));
 }
 
 value get_lower(value v){

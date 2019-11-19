@@ -54,6 +54,7 @@ let rec print_syntax outchan t n  = match t with
 | And((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "AND\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | AndI((_,x),y) -> print_space outchan n;Printf.fprintf outchan "%s" "ANDI\n";print_syntax outchan x (n+2);Printf.fprintf outchan "%d\n" y 
 | Or((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "OR\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
+| Xor((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "XOR\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | FEq((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "FEQ\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | FLT((_,x),(_,y)) -> print_space outchan n;Printf.fprintf outchan "%s" "FLT\n";print_syntax outchan x (n+2);print_syntax outchan y (n+2)
 | FSqrt((_,x)) -> print_space outchan n;Printf.fprintf outchan "%s" "FSQRT\n";print_syntax outchan x (n+2)

@@ -28,7 +28,7 @@ let rec deref_term (pos, ebody) =
   | Neg(e) -> pos, Neg(deref_term e)
   | And(e1,e2) -> pos, And(deref_term e1, deref_term e2)
   | Or(e1,e2) -> pos, Or(deref_term e1, deref_term e2)
-  | Xor(e1,e2) -> pos, Or(deref_term e1, deref_term e2)
+  | Xor(e1,e2) -> pos, Xor(deref_term e1, deref_term e2)
   | AndI(e1,e2) -> pos, AndI(deref_term e1, e2)
   | FAbs(e) -> pos, FAbs(deref_term e)
   | ItoF(e) -> pos,  ItoF(deref_term e)

@@ -283,7 +283,7 @@ exp: /* (* 一般の式 (caml2html: parser_exp) *) */
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, Or($1, $3) }
 | XOR simple_exp simple_exp
    %prec prec_app
-    { let start = Parsing.symbol_start_pos () in start.pos_lnum, xor $2 $3 }
+    { let start = Parsing.symbol_start_pos () in start.pos_lnum, Xor($2, $3) }
 | FISZERO simple_exp
    %prec prec_app
     { let start = Parsing.symbol_start_pos () in start.pos_lnum, FEq($2, (let start = Parsing.symbol_start_pos () in start.pos_lnum, Float(0.))) }
