@@ -41,7 +41,14 @@ let pc = ref 8
 let pcincr () = let n = !pc in pc := n + 4; n
 let jpc = ref 8
 let jpincr() = (jpc := !jpc + 4)
-let num_genid2 = ref 0
+
+type dest = Tail | NonTail of Id.t (* 末尾かどうかを表すデータ型 (caml2html: emit_dest) *)
+let rec f_nop dest e = match (dest,e) with
+| (_,Ans(_,Nop))-> true
+| (NonTail(x),Ans(_,Mr(y))) when x = y -> true
+| (NonTail(x),(Let(_,(x',t'),Mr(y),e1))) when x' = y -> f_nop (NonTail(x)) e1
+| (NonTail(x),Let(_,(x',t'),Nop,e1)) -> f_nop (NonTail(x)) e1
+| _ -> false
 
 let load_label pos r label =
   let r' = reg r in
@@ -67,7 +74,7 @@ let rec shuffle sw xys =
                                          xys)
   | xys, acyc -> acyc @ shuffle sw xys
 
-type dest = Tail | NonTail of Id.t (* 末尾かどうかを表すデータ型 (caml2html: emit_dest) *)
+
 let rec g oc = function (* 命令列のアセンブリ生成 (caml2html: emit_g) *)
   | dest, Ans(pos, exp) -> g' oc pos (dest, exp)
   | dest, Let(pos, (x, t), exp, e) ->
@@ -89,8 +96,6 @@ and g' oc pos e =
         if l <> 0 then
           Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n"(pcincr()) (reg x) (reg x) l pos)
   | NonTail(x), FLi(d) ->
-      (*let s = load_label pos (reg reg_tmp) l in
-      Printf.fprintf oc "%d %s\tlfd\t%s, 0(%s)\t\t! %d\n"(pcincr()) s (reg x) (reg reg_tmp) pos;*)
       let u = Int32.to_int(get_upper d) * 4096 in
       let l = Int32.to_int(get_lower d) in
       if u = 0 && (l <> 0)then 
@@ -105,7 +110,7 @@ and g' oc pos e =
             Printf.fprintf oc "%d\timvf\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos )
   | NonTail(x), SetL(Id.L(y)) ->
       let s = load_label pos x y in
-      Printf.fprintf oc "%s" s(*Printf.fprintf oc "%d\taddi\t%s, x0, %d\t\t! %d\n" (pcincr()) (reg x) (Hashtbl.find address_list y) pos*)
+      Printf.fprintf oc "%s" s
   | NonTail(x), Mr(y) when x = y -> () 
   | NonTail(x), Mr(y) -> Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
   | NonTail(x), Neg(y) -> Printf.fprintf oc "%d\tsub\t%s, x0, %s\t\t! %d\n" (pcincr())(reg x) (reg y) pos
@@ -314,12 +319,14 @@ and g'_non_tail_if oc pos dest e1 e2 b bn x y=
   let stackset_back = !stackset in
   g oc (dest, e1);
   let stackset1 = !stackset in
-  (try
-    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc)) pos; (* ここ - (!pc) + 4 かも *)
+  if not(f_nop dest e2) then
+  ((try
+    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc)) pos;
   with Not_found ->
     Printf.printf "LABEL %s NOT FOUND\n" b_cont;
     Printf.fprintf oc "%d\tjal\tx0, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
-  );
+  );)
+  else ();
   Printf.fprintf oc "# %s:\n" b_else;
   stackset := stackset_back;
   g oc (dest, e2);
@@ -343,6 +350,7 @@ and g'_tail_fif oc pos e1 e2 b bn x y =
 and g'_non_tail_fif oc pos dest e1 e2 b bn x y=
   let b_else = Id.genid (b ^ "_else") in
   let b_cont = Id.genid (b ^ "_cont") in
+  if not(f_nop dest e1) then(
   (try
   Printf.fprintf oc "%d\t%s\tx31, %s, %s\t\t! %d\n" (pcincr()) b (reg x) (reg y)  pos;
   Printf.fprintf oc "%d\tbeq\tx31, x0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_else) - (!pc)) pos;
@@ -353,18 +361,38 @@ and g'_non_tail_fif oc pos dest e1 e2 b bn x y=
   let stackset_back = !stackset in
   g oc (dest, e1);
   let stackset1 = !stackset in
-  (try
-    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc)) pos; (* ここ - (!pc) + 4 かも *)
+  if not(f_nop dest e2) then
+  ((try
+    Printf.fprintf oc "%d\tjal\tx0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc)) pos; 
   with Not_found ->
     Printf.printf "LABEL %s NOT FOUND\n" b_cont;
     Printf.fprintf oc "%d\tjal\tx0, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
-  );
+  );) else ();
   Printf.fprintf oc "# %s:\n" b_else;
   stackset := stackset_back;
   g oc (dest, e2);
   Printf.fprintf oc "# %s:\n" b_cont;
   let stackset2 = !stackset in
-  stackset := S.inter stackset1 stackset2
+  stackset := S.inter stackset1 stackset2)
+  else
+  (
+  (try
+  Printf.fprintf oc "%d\t%s\tx31, %s, %s\t\t! %d\n" (pcincr()) b (reg x) (reg y)  pos;
+  Printf.fprintf oc "%d\tbne\tx31, x0, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list b_cont) - (!pc)) pos;
+  with Not_found ->
+    Printf.printf "LABEL %s NOT FOUND\n" b_else;
+    Printf.fprintf oc "%d\t%s\t%s, %s, NOT FOUND\t\t! %d\n" (pcincr()) bn (reg x) (reg y) pos;
+  );
+  let stackset_back = !stackset in
+  g oc (dest, e1);
+  let stackset1 = !stackset in
+  Printf.fprintf oc "# %s:\n" b_else;
+  stackset := stackset_back;
+  g oc (dest, e2);
+  Printf.fprintf oc "# %s:\n" b_cont;
+  let stackset2 = !stackset in
+  stackset := S.inter stackset1 stackset2)
+  
 and g'_args oc pos x_reg_cl ys zs =
   let (i, yrs) =
     List.fold_left
@@ -547,7 +575,6 @@ let rec k oc = function
     | _ -> raise Not_found
   and k'_tail_if oc e1 e2 b bn x y =
     let b_else = Id.genid2 (b ^ "_else") in
-    num_genid2 := !num_genid2 + 1;
     jpincr();
     let stackset_back = !stackset in
     k oc (Tail, e1);
@@ -558,12 +585,13 @@ let rec k oc = function
   and k'_non_tail_if oc dest e1 e2 b bn x y=
     let b_else = Id.genid2 (b ^ "_else") in
     let b_cont = Id.genid2 (b ^ "_cont") in
-    num_genid2 := !num_genid2 + 2;
     jpincr();
     let stackset_back = !stackset in
     k oc (dest, e1);
     let stackset1 = !stackset in
-    jpincr();
+    if not(f_nop dest e2) then
+    (jpincr();)
+    else ();
     Hashtbl.add address_list b_else !jpc;
     Printf.printf "address_list に (%s, %d) を追加\n" b_else !jpc;
     stackset := stackset_back;
@@ -572,9 +600,8 @@ let rec k oc = function
     Printf.printf "address_list に (%s, %d) を追加\n" b_cont !jpc;
     let stackset2 = !stackset in
     stackset := S.inter stackset1 stackset2
-    and k'_tail_fif oc e1 e2 b bn x y =
+  and k'_tail_fif oc e1 e2 b bn x y =
     let b_else = Id.genid2 (b ^ "_else") in
-    num_genid2 := !num_genid2 + 1;
     jpincr();jpincr();
     let stackset_back = !stackset in
     k oc (Tail, e1);
@@ -585,12 +612,12 @@ let rec k oc = function
   and k'_non_tail_fif oc dest e1 e2 b bn x y=
     let b_else = Id.genid2 (b ^ "_else") in
     let b_cont = Id.genid2 (b ^ "_cont") in
-    num_genid2 := !num_genid2 + 2;
     jpincr();jpincr();
     let stackset_back = !stackset in
     k oc (dest, e1);
     let stackset1 = !stackset in
-    jpincr();
+    if not ((f_nop dest e1) || (f_nop dest e2)) then
+    (jpincr();) else ();
     Hashtbl.add address_list b_else !jpc;
     Printf.printf "faddress_list に (%s, %d) を追加\n" b_else !jpc;
     stackset := stackset_back;

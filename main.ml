@@ -36,7 +36,7 @@ let file f = (* ファイルをコンパイルしてファイルに出力する 
   with e -> (close_in inchan; close_out outchan; raise e)
 
 let file2 f =   
-  let inchan = open_in (f ^ ".ml") in
+  let inchan = open_in (f ^ ".ml-temp") in
   let outchan = open_out (f ^ "-1.log") in
   try
     Syntax.print_syntax outchan (snd(Parser.prog Lexer.token (Lexing.from_channel inchan))) 0;
@@ -62,5 +62,5 @@ let () = (* ここからコンパイラの実行が開始される (caml2html: m
     ("Mitou Min-Caml Compiler (C) Eijiro Sumii\n" ^
      Printf.sprintf "usage: %s [-inline m] [-iter n] ...filenames without \".ml\"..." Sys.argv.(0));
   List.iter
-    (fun f -> ignore(file f))
+    (fun f -> ignore(file f);ignore(file2 f))
     !files
