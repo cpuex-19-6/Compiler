@@ -3,6 +3,7 @@ type t =
   | Ans of int * exp
   | Let of int * (Id.t * Type.t) * exp * t
 and exp =
+  | Dummy
   | Nop
   | Li of int
   | FLi of float

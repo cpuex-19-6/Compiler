@@ -1,3 +1,5 @@
+open Setglobalarray
+
 type closure = { entry : Id.l; actual_fv : Id.t list }
 type t = int * tt
 and tt = (* クロージャ変換後の式 (caml2html: closure_t) *)
@@ -111,7 +113,7 @@ let rec g env known (pos, ebody) =
          (thanks to nuevo-namasute and azounoman; test/cls-bug2.ml参照) *)
       let zs = S.diff (fv e1') (S.of_list (List.map fst yts)) in
       let known', e1' =
-        if S.is_empty zs then known', e1' else
+        if S.is_empty zs || (list_include (S.elements zs) !globals) then known', e1' else
         (* 駄目だったら状態(toplevelの値)を戻して、クロージャ変換をやり直す *)
         (Format.eprintf "free variable(s) %s found in function %s@." (Id.pp_list (S.elements zs)) x;
          Format.eprintf "function %s cannot be directly applied in fact@." x;
@@ -123,17 +125,22 @@ let rec g env known (pos, ebody) =
       toplevel := { name = (Id.L(x), t); args = yts; formal_fv = zts; body = e1' } :: !toplevel; (* トップレベル関数を追加 *)
       let e2' = g env' known' e2 in
       if S.mem x (fv e2') then (* xが変数としてe2'に出現するか *)
-        MakeCls((x, t), { entry = Id.L(x); actual_fv = zs }, e2') (* 出現していたら削除しない *)
+       (Format.eprintf "Making closure(s) %s@." x;
+        MakeCls((x, t), { entry = Id.L(x); actual_fv = zs }, e2')) (* 出現していたら削除しない *)
       else
         (Format.eprintf "eliminating closure(s) %s@." x;
          snd e2') (* 出現しなければMakeClsを削除 *)
   | KNormal.App(x, ys) when S.mem x known -> (* 関数適用の場合 (caml2html: closure_app) *)
       Format.eprintf "directly applying %s@." x;
       AppDir(Id.L(x), ys)
-  | KNormal.App(f, xs) -> AppCls(f, xs)
+  | KNormal.App(f, xs) -> 
+     Format.eprintf "applying closure %s@." f;
+     AppCls(f, xs)
   | KNormal.Tuple(xs) -> Tuple(xs)
+  | KNormal.GlobalTuple(xs) -> Tuple(xs)
   | KNormal.LetTuple(xts, y, e) -> LetTuple(xts, y, g (M.add_list xts env) known e)
   | KNormal.Array(x, y) -> Array(x, y)
+  | KNormal.GlobalArray(x, y) -> Array(x, y)
   | KNormal.Get(x, y) -> Get(x, y)
   | KNormal.Put(x, y, z) -> Put(x, y, z)
   | KNormal.ExtArray(x) -> ExtArray(Id.L(x))
@@ -143,5 +150,6 @@ let rec g env known (pos, ebody) =
 
 let f e =
   toplevel := [];
+  print_global !globallist;
   let e' = g M.empty S.empty e in
   Prog(List.rev !toplevel, e')

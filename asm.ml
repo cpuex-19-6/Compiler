@@ -5,6 +5,7 @@ type t = (* ̿����� (caml2html: sparcasm_t) *)
   | Ans of int * exp
   | Let of int * (Id.t * Type.t) * exp * t
 and exp = (* ��İ�Ĥ�̿����б����뼰 (caml2html: sparcasm_exp) *)
+  | Dummy (* Virtual.mlで使うダミー *)
   | Nop
   | Li of int
   | FLi of float
@@ -114,4 +115,4 @@ let rec concat n e1 xt e2 =
   | Ans(n', exp) -> Let(n', xt, exp, e2)
   | Let(n', yt, exp, e1') -> Let(n', yt, exp, concat n' e1' xt e2)
 
-let align i = (if i mod 8 = 0 then i else i + 4)
+let align i = (if i mod 8 = 0 then i else i )

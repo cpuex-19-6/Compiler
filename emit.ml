@@ -110,6 +110,7 @@ and g' oc pos e =
             Printf.fprintf oc "%d\timvf\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos )
   | NonTail(x), SetL(Id.L(y)) ->
       let s = load_label pos x y in
+      (*Printf.fprintf oc "%s\n" "Making Closure";*)
       Printf.fprintf oc "%s" s
   | NonTail(x), Mr(y) when x = y -> () 
   | NonTail(x), Mr(y) -> Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
