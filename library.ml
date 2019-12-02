@@ -2,8 +2,8 @@
 
  let rec pi_div e x = 
      if (0. <= e) && e < (3.1415926535*.2.) then e 
-     else if (e < 0.) && (x >= (-.e))then  pi_div (e+.x) (x/.2.)
-     else if  (0. < e) &&  (x >= e)  then pi_div (e-.x/.2.) (x/.2.)
+     else if (e < 0.) && (x >= (-.e))then  pi_div (e+.x) (fhalf x)
+     else if  (0. < e) &&  (x >= e)  then pi_div (e-.(fhalf x)) (fhalf x)
      else pi_div e (x*.2.) in
 
 let rec pi4div x = 
@@ -20,12 +20,12 @@ let rec pi4div2 x =
   
 let rec tailor_cos y = 
      let xx = y *. y in
-     let t2 = xx /. 2. in
-     let t4 = xx *. t2 /. 12. in
-     let t6 = xx *. t4 /. 30. in
-     let t8 = xx *. t6 /. 56. in
-     let t10 = xx *. t8 /. 90. in
-     let t12 = xx *. t10 /. 132. in
+     let t2 = fhalf xx in
+     let t4 = xx *. t2 *. 0.08333333333 in
+     let t6 = xx *. t4 *. 0.03333333333 in
+     let t8 = xx *. t6 *. 0.01785714285 in
+     let t10 = xx *. t8 *. 0.01111111111 in
+     let t12 = xx *. t10 *. 0.00757575757 in
          1. -. t2 +. t4 -. t6 +. t8 -. t10 +. t12 in 
 
 (*let rec tailor_sin y = 
@@ -49,11 +49,11 @@ let rec sin x =
 
 let rec tailor_atan y = 
   let xx = y *. y in
-  let t3 = y *. xx /. 3. in
-  let t5 = xx *. xx *. y /. 5. in
-  let t7 = xx *. xx *. xx *. y /. 7. in
-  let t9 = xx *. xx *. xx *. xx *. y /. 9. in
-  let t11 = xx *. xx *. xx *. xx *. xx *. xx *. y /. 11. in
+  let t3 = xx *. y *. 0.33333333333 in
+  let t5 = xx *. t3 *. 0.6 in
+  let t7 = xx *. t5 *. 0.71428571428 in
+  let t9 = xx *. t7 *. 0.77777777777 in
+  let t11 = xx *. t9 *. 0.81818181818 in
   y -. t3 +. t5 -. t7 +. t9 -. t11 in
 
 let rec atan y = 
