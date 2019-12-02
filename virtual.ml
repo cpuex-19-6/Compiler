@@ -200,11 +200,18 @@ let h { Closure.name = (Id.L(x), t); Closure.args = yts; Closure.formal_fv = zts
   let (pos, ebody) = e in
   let (int, float) = separate yts in
   let (offset, load) =
+    let zs = fst(List.split zts) in if list_include zs !globals then
     expand
       zts
       (4, g (M.add x t (M.add_list yts (M.add_list zts M.empty))) e)
-      (fun z offset load -> if List.mem z !globals then load else fletd(pos, z, Lfd(x, C(offset)), load))
-      (fun z t offset load -> if List.mem z !globals then load else Let(pos, (z, t), Lwz(x, C(offset)), load)) in
+      (fun z offset load -> load)
+      (fun z t offset load -> load)
+    else
+    expand
+      zts
+      (4, g (M.add x t (M.add_list yts (M.add_list zts M.empty))) e)
+      (fun z offset load ->  fletd(pos, z, Lfd(x, C(offset)), load))
+      (fun z t offset load ->  Let(pos, (z, t), Lwz(x, C(offset)), load)) in
   match t with
   | Type.Fun(_, t2) ->
       { name = Id.L(x); args = int; fargs = float; body = load; ret = t2 }
