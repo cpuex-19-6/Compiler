@@ -55,6 +55,9 @@ and exp = (* ��İ�Ĥ�̿����б����뼰 (caml2html: sparcas
   (* closure address, integer arguments, and float arguments *)
   | CallCls of Id.t * Id.t list * Id.t list
   | CallDir of Id.l * Id.t list * Id.t list
+  | CallDir1 of Id.l * Id.t list * Id.t list
+  | CallDir2 of Id.l * Id.t list * Id.t list
+  | CallDir3 of Id.l * Id.t list * Id.t list 
   | Save of Id.t * Id.t (* �쥸�����ѿ����ͤ򥹥��å��ѿ�����¸ (caml2html: sparcasm_save) *)
   | Restore of Id.t (* �����å��ѿ������ͤ����� (caml2html: sparcasm_restore) *)
 type fundef = { name : Id.l; args : Id.t list; fargs : Id.t list; body : t; ret : Type.t }
@@ -103,7 +106,7 @@ let rec fv_exp = function
   | IfEq(x, y', e1, e2) | IfLE(x, y', e1, e2) | IfGE(x, y', e1, e2) ->  x :: fv_id_or_imm y' @ remove_and_uniq S.empty (fv e1 @ fv e2) (* uniq here just for efficiency *)
   | IfFEq(x, y, e1, e2) | IfFLE(x, y, e1, e2) -> x :: y :: remove_and_uniq S.empty (fv e1 @ fv e2) (* uniq here just for efficiency *)
   | CallCls(x, ys, zs) -> x :: ys @ zs
-  | CallDir(_, ys, zs) -> ys @ zs
+  | CallDir(_, ys, zs) | CallDir1(_, ys, zs) | CallDir2(_, ys, zs) | CallDir3(_, ys, zs)  -> ys @ zs
 and fv = function
   | Ans(_, exp) -> fv_exp exp
   | Let(_, (x, t), exp, e) ->

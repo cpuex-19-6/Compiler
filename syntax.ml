@@ -99,4 +99,4 @@ print_idlist outchan t n = match t with
 |[] -> ()
 |x::xs -> print_idtype outchan x n;print_idlist outchan xs n
 and
-print_space outchan n = if n = 0 then () else (Printf.fprintf outchan  " %s" "";print_space outchan (n-1))
+print_space outchan n = ()(*if n = 0 then () else (Printf.fprintf outchan  " %s" "";print_space outchan (n-1))*)

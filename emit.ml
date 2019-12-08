@@ -7,7 +7,7 @@ external get_upper : float -> int32 = "get_upper"
 external get_lower : float -> int32 = "get_lower"
 
 let stackset = ref S.empty (* すでにSaveされた変数の集合 (caml2html: emit_stackset) *)
-let stackmap = ref [] (* Saveされた変数の、スタックにおける位置 (caml2html: emit_stackmap) *)
+let stackmap = ref ["dummy"] (* Saveされた変数の、スタックにおける位置 (caml2html: emit_stackmap) *)
 let save x =
   stackset := S.add x !stackset;
   if not (List.mem x !stackmap) then
@@ -42,11 +42,16 @@ let pcincr () = let n = !pc in pc := n + 4; n
 let jpc = ref 8
 let jpincr() = (jpc := !jpc + 4)
 
+let check = ref 1 (*0のときsaveあり*)
+let check2 = ref 1 (* 0のときSaveがあった　*)
+
 type dest = Tail | NonTail of Id.t (* 末尾かどうかを表すデータ型 (caml2html: emit_dest) *)
 let rec f_nop dest e = match (dest,e) with
 | (_,Ans(_,Nop))-> true
 | (NonTail(x),Ans(_,Mr(y))) when x = y -> true
+| (NonTail(x),Ans(_,FMr(y))) when x = y -> true
 | (NonTail(x),(Let(_,(x',t'),Mr(y),e1))) when x' = y -> f_nop (NonTail(x)) e1
+| (NonTail(x),(Let(_,(x',t'),FMr(y),e1))) when x' = y -> f_nop (NonTail(x)) e1
 | (NonTail(x),Let(_,(x',t'),Nop,e1)) -> f_nop (NonTail(x)) e1
 | _ -> false
 
@@ -78,7 +83,10 @@ let rec shuffle sw xys =
 let rec g oc = function (* 命令列のアセンブリ生成 (caml2html: emit_g) *)
   | dest, Ans(pos, exp) -> g' oc pos (dest, exp)
   | dest, Let(pos, (x, t), exp, e) ->
+  if Peephole.occur2 e then check := 1 else check := 0;
       g' oc pos (NonTail(x), exp);
+      (*Printf.fprintf oc "check = %d\n" !check;
+      Printf.fprintf oc "check2 = %d\n" !check2;*)
       g oc (dest, e)
 and g' oc pos e =
   (* print_int pos; *)
@@ -110,7 +118,6 @@ and g' oc pos e =
             Printf.fprintf oc "%d\timvf\t%s, x31\t\t! %d\n" (pcincr()) (reg x) pos )
   | NonTail(x), SetL(Id.L(y)) ->
       let s = load_label pos x y in
-      (*Printf.fprintf oc "%s\n" "Making Closure";*)
       Printf.fprintf oc "%s" s
   | NonTail(x), Mr(y) when x = y -> () 
   | NonTail(x), Mr(y) -> Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg x) (reg y) pos
@@ -294,6 +301,61 @@ and g' oc pos e =
         Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
       else if List.mem a allfregs && a <> fregs.(0) then
         Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
+  | (NonTail(a), CallDir1(Id.L(x), ys, zs)) ->
+      g'_args oc pos [] ys zs;
+      let ss = stacksize () in
+      Printf.fprintf oc "%d\tsw\t%s, x1, %d\t\t! %d\n" (pcincr()) (reg reg_sp)  (*(-(ss - 4))*) 0 pos;
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) (-ss) pos;
+      (try
+        Printf.fprintf oc "%d\tjal\tx1, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list x) - (!pc)) pos;
+      with Not_found ->
+        Printf.printf "LABEL %s NOT FOUND\n" x;
+        Printf.fprintf oc "%d\tjal\tx1, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
+      );
+      (if !check = 0 then (check2 := 0;
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos) else check2 := 1);
+      (*Printf.fprintf oc "%d\tlw\tx1, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (-(ss - 4)) pos;*)
+      if List.mem a allregs && a <> regs.(0) then
+        Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
+      else if List.mem a allfregs && a <> fregs.(0) then
+        Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
+  | (NonTail(a), CallDir2(Id.L(x), ys, zs)) ->
+      g'_args oc pos [] ys zs;
+      let ss = stacksize () in
+      (*Printf.fprintf oc "%d\tsw\t%s, x1, %d\t\t! %d\n" (pcincr()) (reg reg_sp)  (-(ss - 4)) pos;*)
+      (if !check2 = 0 then 
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) (-ss) pos else check2 := 1);
+      (try
+        Printf.fprintf oc "%d\tjal\tx1, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list x) - (!pc)) pos;
+      with Not_found ->
+        Printf.printf "LABEL %s NOT FOUND\n" x;
+        Printf.fprintf oc "%d\tjal\tx1, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
+      );
+      (if !check = 0 then (check2 := 0;
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos) else check2 := 1);
+      (*Printf.fprintf oc "%d\tlw\tx1, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (-(ss - 4)) pos;*)
+      if List.mem a allregs && a <> regs.(0) then
+        Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
+      else if List.mem a allfregs && a <> fregs.(0) then
+        Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
+    | (NonTail(a), CallDir3(Id.L(x), ys, zs)) ->
+      g'_args oc pos [] ys zs;
+      let ss = stacksize () in
+     (* Printf.fprintf oc "%d\tsw\t%s, x1, %d\t\t! %d\n" (pcincr()) (reg reg_sp)  (-(ss - 4)) pos;*)
+      if !check2 = 0 then 
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) (-ss) pos;
+      (try
+        Printf.fprintf oc "%d\tjal\tx1, %d\t\t! %d\n" (pcincr()) ((Hashtbl.find address_list x) - (!pc)) pos;
+      with Not_found ->
+        Printf.printf "LABEL %s NOT FOUND\n" x;
+        Printf.fprintf oc "%d\tjal\tx1, NOT_FOUND\t\t! %d\n" (pcincr()) pos;
+      );
+      Printf.fprintf oc "%d\taddi\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (reg reg_sp) ss pos;
+      Printf.fprintf oc "%d\tlw\tx1, %s, %d\t\t! %d\n" (pcincr()) (reg reg_sp) (*(-(ss - 4))*)0 pos;
+      if List.mem a allregs && a <> regs.(0) then
+        Printf.fprintf oc "%d\taddi\t%s, %s, 0\t\t! %d\n" (pcincr()) (reg a) (reg regs.(0)) pos
+      else if List.mem a allfregs && a <> fregs.(0) then
+        Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg a) (reg fregs.(0)) (reg fregs.(0)) pos;
   | _ -> raise Not_found
 and g'_tail_if oc pos e1 e2 b bn x y =
   let b_else = Id.genid (b ^ "_else") in
@@ -415,6 +477,7 @@ and g'_args oc pos x_reg_cl ys zs =
 let rec k oc = function
     | dest, Ans(_, exp) -> k' oc (dest, exp)
     | dest, Let(_, (x, t), exp, e) ->
+    if Peephole.occur2 e then check := 1 else check := 0;
         k' oc (NonTail(x), exp);
         k oc (dest, e)
   and k' oc = function
@@ -573,7 +636,36 @@ let rec k oc = function
           jpincr()
         else if List.mem a allfregs && a <> fregs.(0) then
           jpincr()
+    | (NonTail(a), CallDir1(Id.L(x), ys, zs)) ->
+        k'_args oc [] ys zs;
+        let _ = stacksize () in
+        jpc := !jpc + 12;
+        if !check = 0 then (check2 := 0;jpincr()) else check2 := 1;
+        if List.mem a allregs && a <> regs.(0) then
+          jpincr()
+        else if List.mem a allfregs && a <> fregs.(0) then
+          jpincr()
+    | (NonTail(a), CallDir2(Id.L(x), ys, zs)) ->
+        k'_args oc [] ys zs;
+        let _ = stacksize () in
+        if !check2 = 0 then jpincr() else ();
+        jpc := !jpc + 4;
+        if !check = 0 then (check2 := 0;jpincr()) else check2 := 1;
+        if List.mem a allregs && a <> regs.(0) then
+          jpincr()
+        else if List.mem a allfregs && a <> fregs.(0) then
+          jpincr()
+    | (NonTail(a), CallDir3(Id.L(x), ys, zs)) ->
+        k'_args oc [] ys zs;
+        let _ = stacksize () in
+        if !check2 = 0 then jpincr() else ();
+        jpc := !jpc + 12;
+        if List.mem a allregs && a <> regs.(0) then
+          jpincr()
+        else if List.mem a allfregs && a <> fregs.(0) then
+          jpincr()
     | _ -> raise Not_found
+    
   and k'_tail_if oc e1 e2 b bn x y =
     let b_else = Id.genid2 (b ^ "_else") in
     jpincr();
@@ -650,15 +742,19 @@ let temp_counter = ref 0
 let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
   Printf.fprintf oc "# %s:\n" x;
   stackset := S.empty;
-  stackmap := [];
+  stackmap := ["dummy"];
+  check := 0;
+  check2 := 0;
   g oc (Tail, e)
  
 let i oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
   stackset := S.empty;
-  stackmap := [];
+  stackmap := ["dummy"];
   Hashtbl.add address_list x !jpc; 
   Printf.printf "address_list に (%s, %d) を追加\n" x !jpc;
   Printf.printf "counter = %d\n" !counter;
+  check := 0;
+  check2 := 0;
   k oc (Tail, e)
  
 let f oc (Prog(data, fundefs, e)) =
@@ -668,6 +764,8 @@ let f oc (Prog(data, fundefs, e)) =
   Printf.fprintf oc "# jump to main entry point\n";
   Printf.fprintf oc "0\taddi\tx2, x2, -8\n";
   Printf.fprintf oc "4\tjal\tx0, %d\n" ((!jpc)-4);
+  check := 0;
+  check2 := 0;
   k oc (NonTail("_R_0"), e);
   pc := 8;
   jpc := 8;
@@ -676,6 +774,9 @@ let f oc (Prog(data, fundefs, e)) =
   List.iter (fun fundef -> h oc fundef) fundefs;
   Printf.fprintf oc "# main program starts\n";
   stackset := S.empty;
-  stackmap := [];
+  stackmap := ["dummy"];
+
+  check := 0;
+  check2 := 0;
   g oc (NonTail("_R_0"), e);
   Printf.fprintf oc "# main program ends\n";

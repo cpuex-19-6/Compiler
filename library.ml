@@ -1,22 +1,22 @@
  let pi = 3.1415926535 in
 
  let rec pi_div e x = 
-     if (0. <= e) && e < (3.1415926535*.2.) then e 
+     if (0. <= e) && e < (pi *.2.) then e 
      else if (e < 0.) && (x >= (-.e))then  pi_div (e+.x) (fhalf x)
      else if  (0. < e) &&  (x >= e)  then pi_div (e-.(fhalf x)) (fhalf x)
      else pi_div e (x*.2.) in
 
-let rec pi4div x = 
-      if  x < (3.1415927/.2.) then (x,1.)
-      else if  x < 3.1415927 then (3.1415927-.x,-.1.)
-      else if x < (3.1415927*.1.5) then (x-.3.1415927,-.1.)
-      else (3.1415927*.2.-.x,1.) in 
+let rec pi4div x pi = 
+      if  x < (pi/.2.) then (x,1.)
+      else if  x < pi then (pi-.x,-.1.)
+      else if x < (pi *.1.5) then (x-.pi,-.1.)
+      else (pi*.2.-.x,1.) in 
 
-let rec pi4div2 x = 
-      if x < (3.1415927/.2.) then (x,1.)
-      else if x < 3.1415927 then (3.1415927-.x,1.)
-      else if x < (3.1415927*.1.5) then (x-.3.1415927,-.1.)
-      else (3.1415927*.2.-.x,-.1.) in 
+let rec pi4div2 x pi = 
+      if x < (pi/.2.) then (x,1.)
+      else if x < pi then (pi-.x,1.)
+      else if x < (pi*.1.5) then (x-.pi,-.1.)
+      else (pi*.2.-.x,-.1.) in 
   
 let rec tailor_cos y = 
      let xx = y *. y in
@@ -39,12 +39,12 @@ let rec tailor_cos y =
      y -. t3 +. t5 -. t7 +. t9 -. t11 +. t13 in*)
 
 let rec cos x = 
-  let (a,b) = (pi4div(pi_div x (3.1415926535 *. 2.))) in
+  let (a,b) = pi4div(pi_div x (pi *. 2.)) 3.1415926535 in
   b *. (tailor_cos a)
   in
 
 let rec sin x = 
-  let (a,b) = pi4div2(pi_div x (3.1415926535 *. 2.)) in
+  let (a,b) = pi4div2(pi_div x (pi *. 2.)) 3.1415926535 in
   b *. (tailor_cos ((pi/. 2.) -. a)) in
 
 let rec tailor_atan y = 

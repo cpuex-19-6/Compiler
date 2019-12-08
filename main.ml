@@ -11,6 +11,7 @@ let lexbuf outchan l = (* バッファをコンパイルしてチャンネルへ
   Id.counter := 0;
   Typing.extenv := M.empty;
   let prog = 
+  (Peephole.f
     (RegAlloc.f
       (Simm.f
         (Virtual.f
@@ -20,11 +21,11 @@ let lexbuf outchan l = (* バッファをコンパイルしてチャンネルへ
                   (Alpha.f
                     (KNormal.f
                       (Globalarray.f
+                        (And_elim.f
                         (Typing.f
-                          (Parser.prog Lexer.token l)))))))))))
+                          (Parser.prog Lexer.token l)))))))))))))
   in 
-    Emit.f outchan prog(*;
-    EmitBinary.f binchan prog*)
+    Emit.f outchan prog
 
 let string s = lexbuf stdout (Lexing.from_string s) (* 文字列をコンパイルして標準出力に表示する (caml2html: main_string) *)
 

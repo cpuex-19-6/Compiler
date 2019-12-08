@@ -196,25 +196,7 @@ let rec g env (pos, ebody) =
   | Closure.ExtArray(Id.L(x)) -> Ans(pos, SetL(Id.L("min_caml_" ^ x)))
 
 (* �ؿ��β��ۥޥ��󥳡������� (caml2html: virtual_h) *)
-let h { Closure.name = (Id.L(x), t); Closure.args = yts; Closure.formal_fv = zts; Closure.body = e } =
-  let (pos, ebody) = e in
-  let (int, float) = separate yts in
-  let (offset, load) =
-    let zs = fst(List.split zts) in if list_include zs !globals then
-    expand
-      zts
-      (4, g (M.add x t (M.add_list yts (M.add_list zts M.empty))) e)
-      (fun z offset load -> load)
-      (fun z t offset load -> load)
-    else
-    expand
-      zts
-      (4, g (M.add x t (M.add_list yts (M.add_list zts M.empty))) e)
-      (fun z offset load ->  fletd(pos, z, Lfd(x, C(offset)), load))
-      (fun z t offset load ->  Let(pos, (z, t), Lwz(x, C(offset)), load)) in
-  match t with
-  | Type.Fun(_, t2) ->
-      { name = Id.L(x); args = int; fargs = float; body = load; ret = t2 }
+
   | _ -> assert false
 
 (* �ץ���������Τβ��ۥޥ��󥳡������� (caml2html: virtual_f) *)
@@ -233,7 +215,7 @@ let h { Closure.name = (Id.L(x), t); Closure.args = yts; Closure.formal_fv = zts
   
   let rec print_exp outchan e =
     match e with
-    | Nop -> ()
+    | Nop -> Printf.fprintf outchan "Nop\n"
     | Li(i) -> Printf.fprintf outchan "Li %d\n" i
     | FLi(l) -> Printf.fprintf outchan "Fli %f\n" l
     | SetL(Id.L(l)) -> Printf.fprintf outchan "SetL %s\n" l
@@ -358,6 +340,27 @@ let h { Closure.name = (Id.L(x), t); Closure.args = yts; Closure.formal_fv = zts
       print_syntax outchan sy
     )
 
+let h { Closure.name = (Id.L(x), t); Closure.args = yts; Closure.formal_fv = zts; Closure.body = e } =
+  let (pos, ebody) = e in
+  let (int, float) = separate yts in
+  let (offset, load) =
+    let zs = fst(List.split zts) in if list_include zs !globals then
+      expand
+        zts
+        (4, g (M.add x t (M.add_list yts (M.add_list zts M.empty))) e)
+        (fun z offset load -> load)
+        (fun z t offset load -> load)
+      else
+      expand
+        zts
+        (4, g (M.add x t (M.add_list yts (M.add_list zts M.empty))) e)
+        (fun z offset load ->  fletd(pos, z, Lfd(x, C(offset)), load))
+        (fun z t offset load ->  Let(pos, (z, t), Lwz(x, C(offset)), load)) in
+  match t with
+    | Type.Fun(_, t2) ->
+        (*Printf.fprintf stdout "----------------Function = %s\n" x;
+        print_syntax stdout load;*)
+        { name = Id.L(x); args = int; fargs = float; body = load ; ret = t2 }
     
 let f (Closure.Prog(fundefs, e)) =
   data := [];
