@@ -156,6 +156,9 @@ and g' pos dest cont regenv = function (* ��̿��Υ쥸�������
   | IfGE(x, y', e1, e2) as exp -> g'_if pos dest cont regenv exp (fun e1' e2' -> IfGE(find x Type.Int regenv, find' y' regenv, e1', e2')) e1 e2
   | IfFEq(x, y, e1, e2) as exp -> g'_if pos dest cont regenv exp (fun e1' e2' -> IfFEq(find x Type.Float regenv, find y Type.Float regenv, e1', e2')) e1 e2
   | IfFLE(x, y, e1, e2) as exp -> g'_if pos dest cont regenv exp (fun e1' e2' -> IfFLE(find x Type.Float regenv, find y Type.Float regenv, e1', e2')) e1 e2
+  | IfZ(x, e1, e2) as exp -> g'_if pos dest cont regenv exp (fun e1' e2' -> IfZ(find x Type.Int regenv, e1', e2')) e1 e2
+  | IfPos(x, e1, e2) as exp -> g'_if pos dest cont regenv exp (fun e1' e2' -> IfPos(find x Type.Int regenv, e1', e2')) e1 e2
+  | IfNeg(x, e1, e2) as exp -> g'_if pos dest cont regenv exp (fun e1' e2' -> IfNeg(find x Type.Int regenv, e1', e2')) e1 e2
   | CallCls(x, ys, zs) as exp ->
       if List.length ys > Array.length regs - 2 || List.length zs > Array.length fregs - 1 then
         failwith (Format.sprintf "cannot allocate registers for arugments to %s" x)

@@ -91,6 +91,18 @@ let rec g env (pos, ebody) =
       | Type.Bool | Type.Int -> Ans(pos, IfLE(x, V(y), g env e1, g env e2))
       | Type.Float -> Ans(pos, IfFLE(x, y, g env e1, g env e2))
       | _ -> failwith "inequality supported only for bool, int, and float")
+  | Closure.IfZ(x, e1, e2) ->
+      (match M.find x env with
+      | Type.Bool | Type.Int -> Ans(pos, IfZ(x, g env e1, g env e2))
+      | _ -> failwith "inequality supported only for int, and float")
+  | Closure.IfPos(x, e1, e2) ->
+      (match M.find x env with
+      | Type.Bool | Type.Int -> Ans(pos, IfPos(x, g env e1, g env e2))
+      | _ -> failwith "inequality supported only for bool, and float")
+  | Closure.IfNeg(x, e1, e2) ->
+      (match M.find x env with
+      | Type.Bool | Type.Int -> Ans(pos, IfNeg(x, g env e1, g env e2))
+      | _ -> failwith "inequality supported only for bool, int, and ")
   | Closure.Let((x, t1), e1, e2) ->
       let e1' = g env e1 in
       let e2' = g (M.add x t1 env) e2 in
@@ -361,6 +373,7 @@ let h { Closure.name = (Id.L(x), t); Closure.args = yts; Closure.formal_fv = zts
         (*Printf.fprintf stdout "----------------Function = %s\n" x;
         print_syntax stdout load;*)
         { name = Id.L(x); args = int; fargs = float; body = load ; ret = t2 }
+    | _ -> assert false
     
 let f (Closure.Prog(fundefs, e)) =
   data := [];

@@ -29,9 +29,13 @@ let rec g env (pos, ebody) = (* 定数畳み込みルーチン本体 (caml2html: constfold_g
   | FDiv(x, y) when memf x env && memf y env -> pos, Float(findf x env /. findf y env)
   | IfEq(x, y, e1, e2) when memi x env && memi y env -> if findi x env = findi y env then g env e1 else g env e2
   | IfEq(x, y, e1, e2) when memf x env && memf y env -> if findf x env = findf y env then g env e1 else g env e2
+  | IfEq(x, y, e1, e2) when memi x env -> if findi x env = 0 then pos, IfZ(y, g env e1, g env e2) else pos, IfEq(x, y, g env e1, g env e2)
+  | IfEq(x, y, e1, e2) when memi y env -> if findi y env = 0 then pos, IfZ(x, g env e1, g env e2) else pos, IfEq(x, y, g env e1, g env e2)
   | IfEq(x, y, e1, e2) -> pos, IfEq(x, y, g env e1, g env e2)
   | IfLE(x, y, e1, e2) when memi x env && memi y env -> if findi x env <= findi y env then g env e1 else g env e2
   | IfLE(x, y, e1, e2) when memf x env && memf y env -> if findf x env <= findf y env then g env e1 else g env e2
+  | IfLE(x, y, e1, e2) when memi x env -> if findi x env = 0 then pos, IfPos(y, g env e1, g env e2) else pos, IfLE(x, y, g env e1, g env e2)
+  | IfLE(x, y, e1, e2) when memi y env -> if findi y env = 0 then pos, IfNeg(x, g env e1, g env e2) else pos, IfLE(x, y, g env e1, g env e2)
   | IfLE(x, y, e1, e2) -> pos, IfLE(x, y, g env e1, g env e2)
   | Let((x, t), e1, e2) -> (* letのケース (caml2html: constfold_let) *)
       let e1' = g env e1 in

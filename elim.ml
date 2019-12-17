@@ -2,7 +2,7 @@ open KNormal
 
 let rec effect (_, ebody) = (* 副作用の有無 (caml2html: elim_effect) *)
   match ebody with
-  | Let(_, e1, e2) | IfEq(_, _, e1, e2) | IfLE(_, _, e1, e2) -> effect e1 || effect e2
+  | Let(_, e1, e2) | IfEq(_, _, e1, e2) | IfLE(_, _, e1, e2) | IfZ(_, e1, e2) | IfPos(_, e1, e2) | IfNeg(_, e1, e2)-> effect e1 || effect e2
   | LetRec(_, e) | LetTuple(_, _, e) -> effect e
   | App _ | Put _ | ExtFunApp _ | Read | FRead | Write _ | Array _-> true
   | _ -> false
@@ -11,6 +11,9 @@ let rec f (pos, ebody) = (* 不要定義削除ルーチン本体 (caml2html: elim_f) *)
   let body = match ebody with
   | IfEq(x, y, e1, e2) -> IfEq(x, y, f e1, f e2)
   | IfLE(x, y, e1, e2) -> IfLE(x, y, f e1, f e2)
+  | IfZ(x, e1, e2) -> IfZ(x, f e1, f e2)
+  | IfPos(x, e1, e2) -> IfPos(x, f e1, f e2)
+  | IfNeg(x, e1, e2) -> IfNeg(x, f e1, f e2)
   | Let((x, t), e1, e2) -> (* letの場合 (caml2html: elim_let) *)
       let e1' = f e1 in
       let e2' = f e2 in

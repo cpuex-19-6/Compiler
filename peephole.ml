@@ -27,6 +27,9 @@ match e with
 | Let(_,_,IfGE(_,_,e1,e2),e3) -> occur e1 && occur e2
 | Let(_,_,IfFEq(_,_,e1,e2),e3) -> occur e1 && occur e2
 | Let(_,_,IfFLE(_,_,e1,e2),e3) -> occur e1 && occur e2
+| Let(_,_,IfZ(_,e1,e2),e3) -> occur e1 && occur e2
+| Let(_,_,IfPos(_,e1,e2),e3) -> occur e1 && occur e2
+| Let(_,_,IfNeg(_,e1,e2),e3) -> occur e1 && occur e2
 | Let(_,_,_,e1) -> occur e1 
 | _ ->  false
 
@@ -41,61 +44,12 @@ match e with
 | Let(_,_,IfGE(_,_,e1,e2),e3) -> false(*occur2 e1 && occur2 e2*)
 | Let(_,_,IfFEq(_,_,e1,e2),e3) -> false(*occur2 e1 && occur2 e2*)
 | Let(_,_,IfFLE(_,_,e1,e2),e3) -> false(*occur2 e1 && occur2 e2*)
+| Let(_,_,IfZ(_,e1,e2),e3) -> false
+| Let(_,_,IfPos(_,e1,e2),e3) -> false
+| Let(_,_,IfNeg(_,e1,e2),e3) -> false
 | Let(_,_,_,e1) -> occur2 e1 
 | Ans(_,_) -> false
 | _ -> assert false
-
-(*let rec j exp flag = match (flag,exp) with (* リンクレジスタの保存に関する覗き穴最適化　*)
-| (0,Let(pos,(x1,t1),CallDir(Id.L(x),ys,zs),e)) ->
-   Let(pos,(x1,t1),CallDir1(Id.L(x),ys,zs), (j e 1))
-| (1,Let(pos,(x1,t1),CallDir(x,ys,zs),e)) ->
-   Let(pos,(x1,t1),CallDir2(x,ys,zs),(j e 0))
-| (n,Let(pos,(x',t'),IfEq(x,y,e1,e2),e)) ->
-    if occur e1 && occur e2
-    Let(pos,(x',t'),IfEq(x,y,j e1 n,j e2 n),j e 1)
-    else
-    Let(pos,(x',t'),IfEq(x,y,j e1 n,j e2 n),i e 0)
-| (n,Let(pos,(x',t'),IfLE(x,y,e1,e2),e)) ->
-    if occur e1 && occur e2
-    Let(pos,(x',t'),IfLE(x,y,j e1 n,j e2 n),j e 1)
-    else
-    Let(pos,(x',t'),IfLE(x,y,j e1 n,j e2 n),j e n)
-| (n,Let(pos,(x',t'),IfGE(x,y,e1,e2),e)) ->
-    if occur e1 && occur e2
-    Let(pos,(x',t'),IfGE(x,y,j e1 n,j e2 n),j e 1)
-    else
-    Let(pos,(x',t'),IfGE(x,y,j e1 n,j e2 n),j e 0)
-| (n,Let(pos,(x',t'),IfFEq(x,y,e1,e2),e)) ->
-    if occur e1 && occur e2
-    Let(pos,(x',t'),IfFEq(x,y,j e1 n,j e2 n),j e 1)
-    else
-    Let(pos,(x',t'),IfFEq(x,y,j e1 n,j e2 n),j e 0)
-| (n,Let(pos,(x',t'),IfFLE(x,y,e1,e2),e)) ->
-    if occur e1 && occur e2
-    Let(pos,(x',t'),IfFLE(x,y,j e1 n,j e2 n),j e 1)
-    else
-    Let(pos,(x',t'),IfFLE(x,y,j e1 n,j e2 n),i e 0)
-| (0,Let(pos,(x',t'),com, e)) ->
-   Let(pos,(x',t'),com,j e 0)
-| (1,Let(pos,(x',t'),com, e)) ->
-   Let(pos,(x',t'),com,j e 1)
-| (_,Ans(pos,IfEq(x,y,e1,e2))) -> 
-   Ans(pos,IfEq(x,y, j e1 0,j e2 0))
-| (_,Ans(pos,IfLE(x,y,e1,e2))) -> 
-   Ans(pos,IfLE(x,y, j e1 0,j e2 0))
-| (_,Ans(pos,IfGE(x,y,e1,e2))) -> 
-   Ans(pos,IfGE(x,y, j e1 0,j e2 0))
-| (_,Ans(pos,IfFEq(x,y,e1,e2))) -> 
-   Ans(pos,IfFEq(x,y,j e1 0,j e2 0))
-| (_,Ans(pos,IfFLE(x,y,e1,e2))) -> 
-   Ans(pos,IfFLE(x,y,j e1 0,j e2 0))
-| (0,Ans(pos,CallDir(x,ys,zs))) ->
-   Ans(pos,CallDir(x,ys,zs))
-| (1,Ans(pos,CallDir(x,ys,zs))) ->
-   Ans(pos,CallDir(x,ys,zs))
-| (_,Ans(pos,e)) ->
-   Ans(pos,e)
-| _ -> exp*)
 
 let rec i exp flag = match (flag,exp) with (* リンクレジスタの保存に関する覗き穴最適化　*)
 | (0,Let(pos,(x1,t1),CallDir(Id.L(x),ys,zs),e)) ->
@@ -118,6 +72,12 @@ let rec i exp flag = match (flag,exp) with (* リンクレジスタの保存に�
     Let(pos,(x',t'),IfFEq(x,y,i e1 n,i e2 n),i e 0)
 | (n,Let(pos,(x',t'),IfFLE(x,y,e1,e2),e)) ->
     Let(pos,(x',t'),IfFLE(x,y,i e1 n,i e2 n),i e 0)
+| (n,Let(pos,(x',t'),IfZ(x,e1,e2),e)) ->
+    Let(pos,(x',t'),IfZ(x,i e1 n,i e2 n),i e 0)
+| (n,Let(pos,(x',t'),IfPos(x,e1,e2),e)) ->
+    Let(pos,(x',t'),IfPos(x,i e1 n,i e2 n),i e 0)
+| (n,Let(pos,(x',t'),IfNeg(x,e1,e2),e)) ->
+    Let(pos,(x',t'),IfNeg(x,i e1 n,i e2 n),i e 0)
 | (0,Let(pos,(x',t'),com, e)) ->
    Let(pos,(x',t'),com,i e 0)
 | (1,Let(pos,(x',t'),com, e)) ->
@@ -132,6 +92,12 @@ let rec i exp flag = match (flag,exp) with (* リンクレジスタの保存に�
    Ans(pos,IfFEq(x,y, i e1 0,i e2 0))
 | (_,Ans(pos,IfFLE(x,y,e1,e2))) -> 
    Ans(pos,IfFLE(x,y, i e1 0,i e2 0))
+| (_,Ans(pos,IfZ(x,e1,e2))) -> 
+   Ans(pos,IfZ(x,i e1 0,i e2 0))
+| (_,Ans(pos,IfPos(x,e1,e2))) -> 
+   Ans(pos,IfPos(x,i e1 0,i e2 0))
+| (_,Ans(pos,IfNeg(x,e1,e2))) -> 
+   Ans(pos,IfNeg(x,i e1 0,i e2 0))
 | (0,Ans(pos,CallDir(x,ys,zs))) ->
    Ans(pos,CallDir(x,ys,zs))
 | (1,Ans(pos,CallDir(x,ys,zs))) ->
@@ -145,4 +111,4 @@ let h { name = l; args = xs; fargs = ys; body = e; ret = t } =
 { name = l; args = xs; fargs = ys; body = i(g e) 0; ret = t }
 
 let f (Prog(data, fundefs, e)) = 
-  Prog(data,List.map h fundefs, g e) 
+  Prog(data,List.map h fundefs, i(g e) 0) 

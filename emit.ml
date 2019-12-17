@@ -16,7 +16,7 @@ let savef x =
   stackset := S.add x !stackset;
   if not (List.mem x !stackmap) then
     (let pad =
-      if List.length !stackmap mod 2 = 0 then [] else [Id.gentmp Type.Int] in
+      if List.length !stackmap mod 2 = 0 then [] else ["dummy for float"] in
     stackmap := !stackmap @ pad @ [x; x])
 let locate x =
   let rec loc = function
@@ -143,7 +143,16 @@ and g' oc pos e =
   | NonTail(x), Sub(y, C(z)) -> Printf.fprintf oc "%d\taddi\t%s, %s, -%d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
   | NonTail(x), Div(y, V(z)) -> Printf.fprintf oc "%d\tdivu\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
   | NonTail(x), Rem(y, z) -> Printf.fprintf oc "%d\tremu\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg z) pos
-  | NonTail(x), Array(y, z) -> (Printf.fprintf oc "%d\taddi\tx30, x3, 0\t\t! %d\n" (pcincr()) pos;
+  | NonTail(x), Array(y, z) ->  if y = x then
+                              (Printf.fprintf oc "%d\taddi\tx30, x3, 0\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\tbeq\t%s, x0, 20\t\t! %d\n" (pcincr()) (reg y) pos;
+                               Printf.fprintf oc "%d\tsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg z) pos;
+                               Printf.fprintf oc "%d\taddi\tx3, x3, 4\t\t! %d\n" (pcincr()) pos;(*hp += 4*)
+                               Printf.fprintf oc "%d\taddi\t%s, %s, -1\t\t! %d\n" (pcincr()) (reg y) (reg y)pos;
+                               Printf.fprintf oc "%d\tjal\tx0, -16\t\t! %d\n" (pcincr()) pos;
+                               Printf.fprintf oc "%d\taddi\t%s, x30, 0\t\t! %d\n" (pcincr()) (reg x) pos)
+                               else
+                              (Printf.fprintf oc "%d\taddi\tx30, x3, 0\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tadd\tx31, x0, %s\t\t! %d\n" (pcincr()) (reg y) pos;
                                Printf.fprintf oc "%d\tbeq\tx31, x0, 20\t\t! %d\n" (pcincr()) pos;
                                Printf.fprintf oc "%d\tsw\tx3, %s, 0\t\t! %d\n" (pcincr()) (reg z) pos;
@@ -239,6 +248,12 @@ and g' oc pos e =
       g'_tail_fif oc pos e1 e2 "feq" "fne" x y
   | Tail, IfFLE(x, y, e1, e2) ->
       g'_tail_fif oc pos e1 e2 "fle" "fgt" x y
+  | Tail, IfZ(x, e1, e2) ->
+      g'_tail_if oc pos e1 e2 "beq" "bne" x "%x0"
+  | Tail, IfPos(x, e1, e2) ->
+      g'_tail_if oc pos e1 e2 "bge" "blt" x "%x0"
+  | Tail, IfNeg(x, e1, e2) ->
+      g'_tail_if oc pos e1 e2 "bge" "blt" "%x0" x
   | NonTail(z), IfEq(x, V(y), e1, e2) ->
       g'_non_tail_if oc pos (NonTail(z)) e1 e2 "beq" "bne" x y
   | NonTail(z), IfEq(x, C(y), e1, e2) ->
@@ -258,6 +273,12 @@ and g' oc pos e =
       g'_non_tail_fif oc pos (NonTail(z)) e1 e2 "feq" "fne" x y
   | NonTail(z), IfFLE(x, y, e1, e2) ->
       g'_non_tail_fif oc pos (NonTail(z)) e1 e2 "fle" "fgt" x y
+  | NonTail(z), IfZ(x, e1, e2) ->
+      g'_non_tail_if oc pos (NonTail(z)) e1 e2 "beq" "bne" x "%x0" 
+  | NonTail(z), IfPos(x, e1, e2) ->
+      g'_non_tail_if oc pos (NonTail(z)) e1 e2 "bge" "blt" x "%x0" 
+  | NonTail(z), IfNeg(x, e1, e2) ->
+      g'_non_tail_if oc pos (NonTail(z)) e1 e2 "bge" "blt" "%x0" x
   (* 関数呼び出しの仮想命令の実装 (caml2html: emit_call) *)
   | Tail, CallCls(x, ys, zs) -> (* 末尾呼び出し (caml2html: emit_tailcall) *)
       g'_args oc pos [(x, reg_cl)] ys zs;
@@ -528,7 +549,7 @@ let rec k oc = function
     | NonTail(x), Sub(y, C(z)) -> jpincr()
     | NonTail(x), Div(y, z) -> jpincr()
     | NonTail(x), Rem(y, z) -> jpincr()
-    | NonTail(x), Array(y, z) -> jpc := !jpc + 32;
+    | NonTail(x), Array(y, z) -> if y = x then jpc := !jpc + 28 else jpc := !jpc + 32;
     | NonTail(x), FArray(y, z) -> jpc := !jpc + 32;
     | NonTail(x), Slw(y, V(z)) -> jpincr()
     | NonTail(x), Slw(y, C(z)) -> jpincr()
@@ -595,6 +616,12 @@ let rec k oc = function
         k'_tail_fif oc e1 e2 "feq" "fne" x y
     | Tail, IfFLE(x, y, e1, e2) ->
         k'_tail_fif oc e1 e2 "fle" "fgt" x y
+    | Tail, IfZ(x, e1, e2) ->
+        k'_tail_if oc e1 e2 "beq" "bne" x "%x0"
+    | Tail, IfPos(x, e1, e2) ->
+        k'_tail_if oc e1 e2 "bge" "blt" x "%x0"
+    | Tail, IfNeg(x, e1, e2) ->
+        k'_tail_if oc e1 e2 "bge" "blt" "%x0" x
     | NonTail(z), IfEq(x, V(y), e1, e2) ->
         k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x y
     | NonTail(z), IfEq(x, C(y), e1, e2) ->
@@ -614,6 +641,12 @@ let rec k oc = function
         k'_non_tail_fif oc (NonTail(z)) e1 e2 "feq" "fne" x y
     | NonTail(z), IfFLE(x, y, e1, e2) ->
         k'_non_tail_fif oc (NonTail(z)) e1 e2 "fle" "fgt" x y
+    | NonTail(z), IfZ(x, e1, e2) ->
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x "%x0"
+    | NonTail(z), IfPos(x, e1, e2) ->
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" x "%x0"
+    | NonTail(z), IfNeg(x, e1, e2) ->
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" "%x0" x
     | Tail, CallCls(x, ys, zs) -> 
         k'_args oc [(x, reg_cl)] ys zs;
         jpincr();jpincr()

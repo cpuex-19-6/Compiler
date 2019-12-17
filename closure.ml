@@ -33,6 +33,9 @@ and tt = (* クロージャ変換後の式 (caml2html: closure_t) *)
   | FDiv of Id.t * Id.t
   | IfEq of Id.t * Id.t * t * t
   | IfLE of Id.t * Id.t * t * t
+  | IfZ of Id.t * t * t
+  | IfPos of Id.t * t * t
+  | IfNeg of Id.t * t * t
   | Let of (Id.t * Type.t) * t * t
   | Var of Id.t
   | MakeCls of (Id.t * Type.t) * closure * t
@@ -56,6 +59,7 @@ let rec fv (_, ebody) =
   | Neg(x) | FNeg(x) | AndI(x,_) | ItoF(x) | FtoI(x) | FAbs(x) | FSqrt(x) | FFloor(x) | Write(x) -> S.singleton x
   | And(x, y) | Or(x, y) | Xor(x, y) | FEq(x, y) | FLT(x, y) | Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Rem(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Array(x, y) | Get(x, y) -> S.of_list [x; y]
   | IfEq(x, y, e1, e2)| IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
+  | IfZ(x, e1, e2) | IfPos(x, e1, e2) | IfNeg(x, e1, e2) -> S.add x (S.union (fv e1) (fv e2))
   | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
   | Var(x) -> S.singleton x
   | MakeCls((x, t), { entry = l; actual_fv = ys }, e) -> S.remove x (S.union (S.of_list ys) (fv e))
@@ -98,6 +102,9 @@ let rec g env known (pos, ebody) =
   | KNormal.FDiv(x, y) -> FDiv(x, y)
   | KNormal.IfEq(x, y, e1, e2) -> IfEq(x, y, g env known e1, g env known e2)
   | KNormal.IfLE(x, y, e1, e2) -> IfLE(x, y, g env known e1, g env known e2)
+  | KNormal.IfZ(x, e1, e2) -> IfZ(x, g env known e1, g env known e2)
+  | KNormal.IfNeg(x, e1, e2) -> IfNeg(x, g env known e1, g env known e2)
+  | KNormal.IfPos(x, e1, e2) -> IfPos(x, g env known e1, g env known e2)
   | KNormal.Let((x, t), e1, e2) -> Let((x, t), g env known e1, g (M.add x t env) known e2)
   | KNormal.Var(x) -> Var(x)
   | KNormal.LetRec({ KNormal.name = (x, t); KNormal.args = yts; KNormal.body = e1 }, e2) -> (* 関数定義の場合 (caml2html: closure_letrec) *)

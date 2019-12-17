@@ -32,6 +32,9 @@ and tt = (* K��������μ� (caml2html: knormal_t) *)
   | Write of Id.t
   | IfEq of Id.t * Id.t * t * t (* ��� + ʬ�� (caml2html: knormal_branch) *)
   | IfLE of Id.t * Id.t * t * t (* ��� + ʬ�� *)
+  | IfZ of Id.t * t * t
+  | IfPos of Id.t * t * t
+  | IfNeg of Id.t * t * t
   | Let of (Id.t * Type.t) * t * t
   | Var of Id.t
   | LetRec of fundef * t
@@ -54,6 +57,7 @@ let rec fv e =
   | Neg(x) | FNeg(x) | AndI(x,_) | FAbs(x) | ItoF(x) | FtoI(x) | FSqrt(x) | FFloor(x) | Write(x)-> S.singleton x
   | And(x, y) | Or(x,y) | Xor(x,y) | Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Rem(x, y) | FAdd(x, y) | FSub(x, y) | FMul(x, y) | FDiv(x, y) | Array(x, y)| GlobalArray(x, y)| Get(x, y) | FEq(x, y) | FLT(x, y)-> S.of_list [x; y]
   | IfEq(x, y, e1, e2) | IfLE(x, y, e1, e2) -> S.add x (S.add y (S.union (fv e1) (fv e2)))
+  | IfZ(x, e1, e2) | IfPos(x, e1, e2) | IfNeg(x, e1, e2) -> S.add x (S.union (fv e1) (fv e2))
   | Let((x, t), e1, e2) -> S.union (fv e1) (S.remove x (fv e2))
   | Var(x) -> S.singleton x
   | LetRec({ name = (x, t); args = yts; body = e1 }, e2) ->

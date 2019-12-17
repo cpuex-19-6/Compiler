@@ -30,6 +30,9 @@ and tt =
   | Write of Id.t
   | IfEq of Id.t * Id.t * t * t
   | IfLE of Id.t * Id.t * t * t
+  | IfZ of Id.t * t * t
+  | IfPos of Id.t * t * t
+  | IfNeg of Id.t * t * t
   | Let of (Id.t * Type.t) * t * t
   | Var of Id.t
   | LetRec of fundef * t
