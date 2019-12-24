@@ -164,8 +164,16 @@ let rec g env (pos, ebody) =
       (fun x -> (pos,Write(x)), Type.Unit)    
   | Globalarray.Eq _ | Globalarray.LE _ as cmp ->
       g env (pos, Globalarray.If((pos, cmp), (pos, Globalarray.Bool(true)), (pos, Globalarray.Bool(false))))
-  | Globalarray.FEq _ | Globalarray.FLT _ as cmp ->
-      g env (pos, Globalarray.If((pos, cmp), (pos, Globalarray.Bool(true)), (pos, Globalarray.Bool(false))))
+  | Globalarray.FEq(e1,e2) -> 
+      insert_let (g env e1)
+        (fun x -> insert_let (g env e2)
+            (fun y ->
+              (pos, FEq(x,y)), Type.Int))
+  | Globalarray.FLT(e1,e2)  -> 
+       insert_let (g env e1)
+         (fun x -> insert_let (g env e2)
+            (fun y ->
+              (pos, FLT(x,y)), Type.Int))
   | Globalarray.If((_, Globalarray.Not(e1)), e2, e3) -> g env (pos, Globalarray.If(e1, e3, e2)) (* not�ˤ��ʬ�����Ѵ� (caml2html: knormal_not) *)
   | Globalarray.If((_, Globalarray.Eq(e1, e2)), e3, e4) ->
       insert_let (g env e1)
