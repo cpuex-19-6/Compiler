@@ -79,6 +79,7 @@ val reg_sp : Id.t
 val reg_tmp : Id.t
 val is_reg : Id.t -> bool
 
+val fv_exp : exp -> Id.t list
 val fv : t -> Id.t list
 val concat : int -> t -> Id.t * Type.t -> t -> t
 

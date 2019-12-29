@@ -24,7 +24,7 @@ syntax.ml parser.mly lexer.mll typing.mli typing.ml and_elim.mli and_elim.ml glo
 alpha.mli alpha.ml beta.mli beta.ml assoc.mli assoc.ml \
 inline.mli inline.ml constFold.mli constFold.ml elim.mli elim.ml \
 setglobalarray.ml setglobalarray.mli closure.mli closure.ml asm.mli asm.ml virtual.mli virtual.ml \
-simm.mli simm.ml regAlloc.mli regAlloc.ml peephole.mli peephole.ml emit.mli emit.ml \
+simm.mli simm.ml elim_asm.ml elim_asm.mli regAlloc.mli regAlloc.ml peephole.mli peephole.ml emit.mli emit.ml \
 main.mli main.ml
 
 %.s: $(RESULT) %.ml

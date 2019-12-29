@@ -13,6 +13,7 @@ let lexbuf outchan l = (* バッファをコンパイルしてチャンネルへ
   let prog = 
   (Peephole.f
     (RegAlloc.f
+     (Elim_asm.f
       (Simm.f
         (Virtual.f
             (Closure.f
@@ -23,7 +24,7 @@ let lexbuf outchan l = (* バッファをコンパイルしてチャンネルへ
                       (Globalarray.f
                         (And_elim.f
                         (Typing.f
-                          (Parser.prog Lexer.token l)))))))))))))
+                          (Parser.prog Lexer.token l))))))))))))))
   in 
     Emit.f outchan prog
 

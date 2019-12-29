@@ -245,9 +245,9 @@ and g' oc pos e =
       Printf.fprintf oc "%d\taddi\t%s, x0, %d\t\t! %d\n" (pcincr()) (reg reg_tmp) y pos;
       g'_tail_if oc pos e1 e2 "bge" "blt" x reg_tmp
   | Tail, IfFEq(x, y, e1, e2) ->
-      g'_tail_fif oc pos e1 e2 "feq" "fne" x y
+      g'_tail_if oc pos e1 e2 "fbeq" "fbne" x y
   | Tail, IfFLE(x, y, e1, e2) ->
-      g'_tail_fif oc pos e1 e2 "fle" "fgt" x y
+      g'_tail_if oc pos e1 e2 "fbge" "fblt" y x
   | Tail, IfZ(x, e1, e2) ->
       g'_tail_if oc pos e1 e2 "beq" "bne" x "%x0"
   | Tail, IfPos(x, e1, e2) ->
@@ -270,9 +270,9 @@ and g' oc pos e =
       Printf.fprintf oc "%d\taddi\t%s, x0, y\t\t! %d\n" (pcincr()) (reg reg_tmp) pos;
       g'_non_tail_if oc pos (NonTail(z)) e1 e2 "bge" "blt" x reg_tmp
   | NonTail(z), IfFEq(x, y, e1, e2) ->
-      g'_non_tail_fif oc pos (NonTail(z)) e1 e2 "feq" "fne" x y
+      g'_non_tail_if oc pos (NonTail(z)) e1 e2 "fbeq" "fbne" x y
   | NonTail(z), IfFLE(x, y, e1, e2) ->
-      g'_non_tail_fif oc pos (NonTail(z)) e1 e2 "fle" "fgt" x y
+      g'_non_tail_if oc pos (NonTail(z)) e1 e2 "fbge" "fblt" y x
   | NonTail(z), IfZ(x, e1, e2) ->
       g'_non_tail_if oc pos (NonTail(z)) e1 e2 "beq" "bne" x "%x0" 
   | NonTail(z), IfPos(x, e1, e2) ->
@@ -613,9 +613,9 @@ let rec k oc = function
         jpincr();
         k'_tail_if oc e1 e2 "bge" "blt" x reg_tmp
     | Tail, IfFEq(x, y, e1, e2) ->
-        k'_tail_fif oc e1 e2 "feq" "fne" x y
+        k'_tail_if oc e1 e2 "fbeq" "fbne" x y
     | Tail, IfFLE(x, y, e1, e2) ->
-        k'_tail_fif oc e1 e2 "fle" "fgt" x y
+        k'_tail_if oc e1 e2 "fbge" "fblt" y x
     | Tail, IfZ(x, e1, e2) ->
         k'_tail_if oc e1 e2 "beq" "bne" x "%x0"
     | Tail, IfPos(x, e1, e2) ->
@@ -638,9 +638,9 @@ let rec k oc = function
         jpincr();
         k'_non_tail_if oc (NonTail(z)) e1 e2 "bge" "blt" x reg_tmp
     | NonTail(z), IfFEq(x, y, e1, e2) ->
-        k'_non_tail_fif oc (NonTail(z)) e1 e2 "feq" "fne" x y
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "fbeq" "fbne" x y
     | NonTail(z), IfFLE(x, y, e1, e2) ->
-        k'_non_tail_fif oc (NonTail(z)) e1 e2 "fle" "fgt" x y
+        k'_non_tail_if oc (NonTail(z)) e1 e2 "fbge" "fblt" y x
     | NonTail(z), IfZ(x, e1, e2) ->
         k'_non_tail_if oc (NonTail(z)) e1 e2 "beq" "bne" x "%x0"
     | NonTail(z), IfPos(x, e1, e2) ->
