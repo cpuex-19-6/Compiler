@@ -7,14 +7,19 @@ let rec iter n e = (* 最適化処理をくりかえす (caml2html: main_iter) *
   if e = e' then e else
   iter (n - 1) e'
 
+let rec iter2 n e = 
+  if n = 0 then e else
+  let e' = (Elim_asm.f(Simm.f e)) in
+  if e = e' then e else
+  iter2 (n-1) e'
+
 let lexbuf outchan l = (* バッファをコンパイルしてチャンネルへ出力する (caml2html: main_lexbuf) *)
   Id.counter := 0;
   Typing.extenv := M.empty;
   let prog = 
   (Peephole.f
     (RegAlloc.f
-     (Elim_asm.f
-      (Simm.f
+     (iter2 5
         (Virtual.f
             (Closure.f
              (Setglobalarray.f
@@ -24,7 +29,7 @@ let lexbuf outchan l = (* バッファをコンパイルしてチャンネルへ
                       (Globalarray.f
                         (And_elim.f
                         (Typing.f
-                          (Parser.prog Lexer.token l))))))))))))))
+                          (Parser.prog Lexer.token l)))))))))))))
   in 
     Emit.f outchan prog
 
