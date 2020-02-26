@@ -175,7 +175,18 @@ and g' oc pos e =
   | NonTail(x), Lwz(y, V(z)) -> 
       Printf.fprintf oc "%d\tadd\tx31, %s, %s\t\t! %d\n" (pcincr()) (reg y) (reg z) pos;
       Printf.fprintf oc "%d\tlw\t%s, x31, 0\t\t! %d\n" (pcincr()) (reg x)  pos
-  | NonTail(x), Lwz(y, C(z)) -> Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr())(reg x) (reg y) z pos
+  | NonTail(x), Lwz(y, C(z)) -> 
+    (if -2048 <= z && z < 2048 then
+      Printf.fprintf oc "%d\tlw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
+     else 
+      (let u = upper z in
+       let l = lower z in
+       (Printf.fprintf oc "%d\tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
+        if l <> 0 then
+          Printf.fprintf oc "%d\taddi\tx31, x31, %d\t\t! %d\n"(pcincr())  l pos);
+          Printf.fprintf oc "%d\tadd\tx30, %s, x31\t\t! %d\n" (pcincr()) (reg y)  pos;
+          Printf.fprintf oc "%d\tlw\t%s, x30, 0\t\t! %d\n" (pcincr()) (reg x) pos
+))
   | NonTail(_), Stw(x, y, V(z)) -> 
       Printf.fprintf oc "%d\tadd\tx31, %s, %s\t\t! %d\n" (pcincr()) (reg y) (reg z) pos;
       Printf.fprintf oc "%d\tsw\tx31, %s, 0\t\t! %d\n" (pcincr()) (reg x) pos
@@ -202,12 +213,32 @@ and g' oc pos e =
       Printf.fprintf oc "%d\tadd\tx31, %s, %s\t\t! %d\n" (pcincr()) (reg y) (reg z) pos;
       Printf.fprintf oc "%d\tflw\t%s, x31, 0\t\t! %d\n" (pcincr()) (reg x)  pos
   | NonTail(x), Lfd(y, C(z)) -> 
-      Printf.fprintf oc "%d\tflw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
+  (if -2048 <= z && z < 2048 then
+    Printf.fprintf oc "%d\tflw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg x) (reg y) z pos
+   else 
+    (let u = upper z in
+     let l = lower z in
+     (Printf.fprintf oc "%d\tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
+      if l <> 0 then
+        Printf.fprintf oc "%d\taddi\tx31, x31, %d\t\t! %d\n"(pcincr())  l pos);
+        Printf.fprintf oc "%d\tadd\tx30, %s, x31\t\t! %d\n" (pcincr()) (reg y)  pos;
+        Printf.fprintf oc "%d\tflw\t%s, x30, 0\t\t! %d\n" (pcincr()) (reg x) pos
+))
   | NonTail(_), Stfd(x, y, V(z)) -> 
       Printf.fprintf oc "%d\tadd\tx31, %s, %s\t\t! %d\n" (pcincr()) (reg y) (reg z) pos;
       Printf.fprintf oc "%d\tfsw\tx31, %s, 0\t\t! %d\n" (pcincr()) (reg x) pos
   | NonTail(_), Stfd(x, y, C(z)) -> 
-      Printf.fprintf oc "%d\tfsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg y) (reg x) z pos
+      (if -2048 <= z && z < 2048 then
+       Printf.fprintf oc "%d\tfsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg y) (reg x) z pos
+      else 
+      (let u = upper z in
+       let l = lower z in
+       (Printf.fprintf oc "%d\tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
+        if l <> 0 then
+          Printf.fprintf oc "%d\taddi\tx31, x31, %d\t\t! %d\n"(pcincr())  l pos);
+          Printf.fprintf oc "%d\tadd\tx30, %s, x31\t\t! %d\n" (pcincr()) (reg y)  pos;
+          Printf.fprintf oc "%d\tfsw\tx30, %s, 0\t\t! %d\n" (pcincr()) (reg x) pos
+  ))
   | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
   (* 退避の仮想命令の実装 (caml2html: emit_save) *)
   | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
@@ -565,7 +596,18 @@ let rec k oc = function
     | NonTail(x), Slw(y, C(z)) -> jpincr()
     | NonTail(x), Sra(y, C(z)) -> jpincr()
     | NonTail(x), Lwz(y, V(z)) -> jpincr();jpincr()
-    | NonTail(x), Lwz(y, C(z)) -> jpincr()
+    | NonTail(x), Lwz(y, C(z)) -> 
+    (if -2048 <= z && z < 2048 then
+      jpincr()
+      else 
+      (let u = upper z in
+      let l = lower z in
+      (jpincr();
+      if l <> 0 then
+        jpincr());
+       jpincr();
+        jpincr()
+      ))
     | NonTail(_), Stw(x, y, V(z)) -> jpincr();jpincr()
     | NonTail(_), Stw(x, y, C(z)) -> 
     (if -2048 <= z && z < 2048 then
@@ -587,9 +629,31 @@ let rec k oc = function
     | NonTail(x), FMul(y, z) -> jpincr()
     | NonTail(x), FDiv(y, z) -> jpincr()
     | NonTail(x), Lfd(y, V(z)) -> jpincr();jpincr()
-    | NonTail(x), Lfd(y, C(z)) -> jpincr()
+    | NonTail(x), Lfd(y, C(z)) -> 
+    (if -2048 <= z && z < 2048 then
+      jpincr()
+      else 
+      (let u = upper z in
+      let l = lower z in
+      (jpincr();
+      if l <> 0 then
+        jpincr());
+       jpincr();
+        jpincr()
+      ))
     | NonTail(_), Stfd(x, y, V(z)) -> jpincr();jpincr()
-    | NonTail(_), Stfd(x, y, C(z)) -> jpincr()
+    | NonTail(_), Stfd(x, y, C(z)) -> 
+    (if -2048 <= z && z < 2048 then
+      jpincr()
+      else 
+      (let u = upper z in
+      let l = lower z in
+      (jpincr();
+      if l <> 0 then
+        jpincr());
+       jpincr();
+        jpincr()
+      ))
     | NonTail(_), Comment(s) -> Printf.fprintf oc "#\t%s\n" s
     | NonTail(_), Save(x, y) when List.mem x allregs && not (S.mem y !stackset) ->
         save y;
