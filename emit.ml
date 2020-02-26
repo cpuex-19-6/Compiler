@@ -180,7 +180,17 @@ and g' oc pos e =
       Printf.fprintf oc "%d\tadd\tx31, %s, %s\t\t! %d\n" (pcincr()) (reg y) (reg z) pos;
       Printf.fprintf oc "%d\tsw\tx31, %s, 0\t\t! %d\n" (pcincr()) (reg x) pos
   | NonTail(_), Stw(x, y, C(z)) -> 
-      Printf.fprintf oc "%d\tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg y) (reg x) z pos
+      (if -2048 <= z && z < 2048 then
+       Printf.fprintf oc "%d\tsw\t%s, %s, %d\t\t! %d\n" (pcincr()) (reg y) (reg x) z pos
+      else 
+      (let u = upper z in
+       let l = lower z in
+       (Printf.fprintf oc "%d\tlui\tx31, %d\t\t! %d\n" (pcincr()) u pos;
+        if l <> 0 then
+          Printf.fprintf oc "%d\taddi\tx31, x31, %d\t\t! %d\n"(pcincr())  l pos);
+          Printf.fprintf oc "%d\tadd\tx30, %s, x31\t\t! %d\n" (pcincr()) (reg y)  pos;
+          Printf.fprintf oc "%d\tsw\tx30, %s, 0\t\t! %d\n" (pcincr()) (reg x) pos
+  ))
   | NonTail(x), FMr(y) when x = y -> ()
   | NonTail(x), FMr(y) -> Printf.fprintf oc "%d\tfsgnj\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg y) pos
   | NonTail(x), FNeg(y) -> Printf.fprintf oc "%d\tfsgnjn\t%s, %s, %s\t\t! %d\n" (pcincr()) (reg x) (reg y) (reg y) pos
@@ -557,7 +567,18 @@ let rec k oc = function
     | NonTail(x), Lwz(y, V(z)) -> jpincr();jpincr()
     | NonTail(x), Lwz(y, C(z)) -> jpincr()
     | NonTail(_), Stw(x, y, V(z)) -> jpincr();jpincr()
-    | NonTail(_), Stw(x, y, C(z)) -> jpincr()
+    | NonTail(_), Stw(x, y, C(z)) -> 
+    (if -2048 <= z && z < 2048 then
+      jpincr()
+      else 
+      (let u = upper z in
+      let l = lower z in
+      (jpincr();
+      if l <> 0 then
+        jpincr());
+       jpincr();
+        jpincr()
+      ))
     | NonTail(x), FMr(y) when x = y -> ()
     | NonTail(x), FMr(y) -> jpincr()
     | NonTail(x), FNeg(y) -> jpincr()
